@@ -8,4 +8,6 @@ import com.fasterxml.jackson.annotation.*;
         include = JsonTypeInfo.As.PROPERTY,
         property = "type"
 )
-public interface Message {}
+public interface Message {
+    interface WithResponse<T extends Message> extends Message {}
+}

@@ -1,0 +1,40 @@
+
+# Application Configuration
+spring:
+  application:
+    name: cav-service
+
+# Server Configuration
+server:
+  port: 0  # Random port for multiple instances
+
+# Eureka Client Configuration
+eureka:
+  client:
+    # === Eureka Server Location ===
+    service-url: # todo: make it configurable? env var?
+      defaultZone: http://localhost:8761/eureka/
+  instance:
+    prefer-ip-address: true
+#
+#  instance:
+#    # === Status Page & Health Check ===
+#    status-page-url-path: ${management.server.servlet.context-path:}/actuator/info
+#    health-check-url-path: ${management.server.servlet.context-path:}/actuator/health
+
+# Actuator Configuration (for health checks)
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: when-authorized
+
+# Logging Configuration
+logging:
+  level:
+    cy.cav: INFO
+    com.netflix.discovery: INFO
+    com.netflix.eureka: WARN
