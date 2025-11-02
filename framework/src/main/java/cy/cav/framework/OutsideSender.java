@@ -32,7 +32,7 @@ class OutsideSender {
                 .build();
     }
 
-    public void send(Envelope envelope) {
+    public void send(Envelope<?> envelope) {
         String receiverUrl = serverMap.getOrDefault(envelope.receiver().serverId(), null);
         if (receiverUrl == null) {
             log.error("Failed to send envelope, can't find URL for receiver server id: {}", envelope);

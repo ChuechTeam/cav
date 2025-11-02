@@ -35,7 +35,7 @@ class MyActor extends Actor {
     }
 
     @Override
-    protected void process(Envelope envelope) {
+    protected void process(Envelope<?> envelope) {
         if (envelope.body() instanceof Req(String test)) {
             respond(envelope, new Resp("test " + test));
         }
@@ -44,3 +44,16 @@ class MyActor extends Actor {
 
 record Req(String test) implements Message.WithResponse<Resp> {}
 record Resp(String test) implements Message {}
+
+@RestController
+class Ctrl {
+    private final World world;
+
+    Ctrl(World world) { this.world = world; }
+
+    @GetMapping("/send/{to}")
+    ResponseEntity<?> send(@PathVariable String to) {
+        world.send(null, ActorAddress.fromString(to), new Resp("Ouais"));
+        return ResponseEntity.ok().build();
+    }
+}

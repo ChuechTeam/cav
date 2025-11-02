@@ -72,7 +72,7 @@ public abstract class Actor {
         return world.query(address, receiver, body);
     }
 
-    protected final void respond(Envelope envelope, Message body) {
+    protected final void respond(Envelope<?> envelope, Message body) {
         world.respond(address, envelope, body);
     }
 
@@ -81,7 +81,7 @@ public abstract class Actor {
     /// This method is guaranteed to always be called on the same thread.
     ///
     /// @param envelope the envelope containing the message
-    protected abstract void process(Envelope envelope);
+    protected abstract void process(Envelope<?> envelope);
 
     /// Called by [World] only to receive messages.
     void acceptEnvelope(Envelope envelope) {

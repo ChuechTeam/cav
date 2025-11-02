@@ -30,7 +30,7 @@ public class World implements SmartLifecycle {
     // Used to write messages in the console with priorities (warning, info, error)
     private static final Logger log = LoggerFactory.getLogger(World.class);
 
-    private final BlockingQueue<Envelope> mailbox = new LinkedBlockingQueue<>();
+    private final BlockingQueue<Envelope<?>> mailbox = new LinkedBlockingQueue<>();
     private final ConcurrentMap<Long, Actor> actors = new ConcurrentHashMap<>();
     private final ConcurrentMap<Long, PendingRequest> pendingRequests = new ConcurrentHashMap<>();
 
@@ -84,7 +84,7 @@ public class World implements SmartLifecycle {
         while (running) {
             // First off, read the incoming envelope from the queue.
             // If there's no incoming envelope yet, the "take()" call will wait until one arrives.
-            Envelope envelope;
+            Envelope<?> envelope;
             try {
                 envelope = mailbox.take();
             } catch (InterruptedException e) {
@@ -209,7 +209,7 @@ public class World implements SmartLifecycle {
     /// @param body     the body of the message
     public void send(@Nullable ActorAddress sender, ActorAddress receiver, Message body) {
         // Put the message in an envelope, so the postman "knows" which actor to send the message to.
-        var envelope = new Envelope(sender, receiver, 0, body, Instant.now());
+        var envelope = new Envelope<>(sender, receiver, 0, body, Instant.now());
         sendEnvelope(envelope);
     }
 
@@ -223,7 +223,7 @@ public class World implements SmartLifecycle {
         pendingRequests.put(requestId, new PendingRequest(future, Instant.now().plusSeconds(30)));
 
         // Put the message in an envelope, so the postman "knows" which actor to send the message to.
-        var envelope = new Envelope(sender, receiver, requestId, body, Instant.now());
+        var envelope = new Envelope<>(sender, receiver, requestId, body, Instant.now());
         sendEnvelope(envelope);
 
         // Return the future we've created earlier.
@@ -231,17 +231,17 @@ public class World implements SmartLifecycle {
     }
 
     /// Can only be called by [Actor]; it doesn't make sense to respond to requests outside an actor.
-    void respond(@Nullable ActorAddress sender, Envelope envelope, Message body) {
+    void respond(@Nullable ActorAddress sender, Envelope<?> envelope, Message body) {
         if (envelope.requestId() == 0) {
             throw new IllegalArgumentException("Can't respond to an envelope with no request id!");
         }
 
         // Put the message in an envelope, so the postman "knows" which actor to send the message to.
-        var newEnv = new Envelope(sender, server.address(), envelope.requestId(), body, Instant.now());
+        var newEnv = new Envelope<>(sender, server.address(), envelope.requestId(), body, Instant.now());
         sendEnvelope(newEnv);
     }
 
-    private void sendEnvelope(Envelope envelope) {
+    private void sendEnvelope(Envelope<?> envelope) {
         if (envelope.receiver().serverId() == server.id()) {
             // The actor we want to send the message to is in this world!
             // Just add the envelope to our local queue.
@@ -253,7 +253,7 @@ public class World implements SmartLifecycle {
         }
     }
 
-    void receive(Envelope envelope) {
+    void receive(Envelope<?> envelope) {
         mailbox.add(envelope);
     }
 

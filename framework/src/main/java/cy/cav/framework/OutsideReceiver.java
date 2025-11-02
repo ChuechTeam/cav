@@ -17,7 +17,7 @@ class OutsideReceiver {
     }
 
     @PostMapping("/mailbox")
-    ResponseEntity<?> receive(@RequestBody Envelope envelope, HttpServletRequest httpServletRequest) {
+    ResponseEntity<?> receive(@RequestBody Envelope<Message> envelope, HttpServletRequest httpServletRequest) {
         if (server.id() != envelope.receiver().serverId()) {
             log.warn("Received invalid envelope from host {} with a wrong server id: {}",
                     httpServletRequest.getRemoteAddr(), envelope);
