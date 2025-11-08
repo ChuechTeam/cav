@@ -19,7 +19,7 @@ public abstract class Actor {
     protected final World world;
     /// The address for this actor.
     protected final ActorAddress address;
-    private ActorState state;
+    private volatile ActorState state;
 
     /// Prepares the Actor to be added in a [World] by accepting a [ActorInit] object,
     /// giving us the actor's address and world.

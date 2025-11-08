@@ -28,7 +28,7 @@ public class Server {
         // Hex-formatted string for good measure
         idString = HexFormat.of().toHexDigits(id);
 
-        address  = ActorAddress.server(id);
+        address = ActorAddress.server(id);
 
         // Store the application name from the environment
         appName = environment.getProperty("spring.application.name");
