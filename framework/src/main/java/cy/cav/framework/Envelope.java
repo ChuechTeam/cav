@@ -30,5 +30,13 @@ public record Envelope<T extends Message>(
         if (receiver.isServerAddress() && requestId == 0) {
             throw new IllegalArgumentException("Can't send a message to the server without a request id!");
         }
+
+        if (requestId != 0 && !(body instanceof Message.Request<?> || body instanceof Message.Response)) {
+            throw new IllegalArgumentException("A sync envelope must have either a Request or a Response");
+        }
+
+        if (requestId == 0 && !(body instanceof Message.Notification || body instanceof Message.Request<?>)) {
+            throw new IllegalArgumentException("An async envelope must have either a Notification or a Request.");
+        }
     }
 }

@@ -4,7 +4,6 @@ import jakarta.annotation.*;
 import org.slf4j.*;
 import org.springframework.context.*;
 import org.springframework.scheduling.annotation.*;
-import org.springframework.stereotype.*;
 
 import java.time.*;
 import java.util.*;
@@ -18,7 +17,7 @@ import java.util.function.*;
 ///
 /// - spawn actors with [#spawn(java.util.function.Function)]
 /// - send messages with [#send(ActorAddress, ActorAddress, Message)]
-/// - send requests with [#query(ActorAddress, ActorAddress, cy.cav.framework.Message.WithResponse)]
+/// - send requests with [#query(ActorAddress, ActorAddress, Message.Request)]
 /// - start processing messages with [#start()]
 ///
 /// ## What you CANNOT do with it
@@ -47,8 +46,6 @@ public class World implements SmartLifecycle {
         this.server = Objects.requireNonNull(server);
         this.outsideSender = Objects.requireNonNull(outsideSender);
     }
-
-    // todo: listen to eureka events and update local server id -> addr table
 
     /// Starts the message-processing loop in a new thread running in the background.
     ///
@@ -197,36 +194,44 @@ public class World implements SmartLifecycle {
         }
     }
 
-    /// Sends a message to an actor, using the given body and sender actor.
+    /// Sends a **notification** to an actor.
     ///
-    /// Supports sending messages to other servers.
-    ///
-    /// Messages are NOT guaranteed to be sent to the destination actor.
+    /// Notifications are NOT guaranteed to be sent to the receiver.
     ///
     /// @param sender   the actor that sent the message; can be null
     /// @param receiver the id of the actor to send the message to
     /// @param body     the body of the message
-    public void send(@Nullable ActorAddress sender, ActorAddress receiver, Message body) {
+    public void send(@Nullable ActorAddress sender, ActorAddress receiver, Message.Notification body) {
         // Put the message in an envelope, so the postman "knows" which actor to send the message to.
         var envelope = new Envelope<>(sender, receiver, 0, body, Instant.now());
         sendEnvelope(envelope);
     }
 
-    /// Begins a request-response conversation to an actor, by sending the given body and sender actor.
+    /// Sends a **request** to an actor and **doesn't care about its response**.
     ///
-    /// Needs a message of type [Message.WithResponse] to know what the response will be.
-    ///
-    /// Requests aren't guaranteed to be sent to the destination actor.
+    /// Requests are NOT guaranteed to be sent to the destination actor.
     ///
     /// @param sender   the actor that sent the message; can be null
     /// @param receiver the id of the actor to send the message to
     /// @param body     the body of the message
+    public void send(@Nullable ActorAddress sender, ActorAddress receiver, Message.Request<?> body) {
+        // Put the message in an envelope, so the postman "knows" which actor to send the message to.
+        var envelope = new Envelope<>(sender, receiver, 0, body, Instant.now());
+        sendEnvelope(envelope);
+    }
+
+    /// Sends a **request** to an actor, **waiting for its response** in a [CompletionStage].
     ///
+    /// Requests are NOT guaranteed to be sent to the destination actor.
+    ///
+    /// @param sender   the actor that sent the message; can be null
+    /// @param receiver the id of the actor to send the message to
+    /// @param body     the body of the message
     /// @return a [CompletionStage] which will complete successfully once the actor responds properly, or with a failure
     ///         when the actor fails to respond after a certain amount of time
-    public <T extends Message> CompletionStage<T> query(@Nullable ActorAddress sender,
-                                                        ActorAddress receiver,
-                                                        Message.WithResponse<T> body) {
+    public <T extends Message.Response> CompletionStage<T> query(@Nullable ActorAddress sender,
+                                                                 ActorAddress receiver,
+                                                                 Message.Request<T> body) {
         // Create a future for this request, which will complete once we receive the response.
         // TODO: Configurable timeout
         var requestId = nextRequestId.getAndIncrement();
@@ -242,9 +247,11 @@ public class World implements SmartLifecycle {
     }
 
     /// Can only be called by [Actor]; it doesn't make sense to respond to requests outside an actor.
-    void respond(@Nullable ActorAddress sender, Envelope<?> envelope, Message body) {
+    void respond(@Nullable ActorAddress sender, Envelope<?> envelope, Message.Response body) {
         if (envelope.requestId() == 0) {
-            throw new IllegalArgumentException("Can't respond to an envelope with no request id!");
+            // Don't send the message if this isn't a request. That means the sender doesn't care about our response,
+            // not that something's fundamentally wrong or something.
+            return;
         }
 
         // Put the message in an envelope, so the postman "knows" which actor to send the message to.
@@ -252,6 +259,7 @@ public class World implements SmartLifecycle {
         sendEnvelope(newEnv);
     }
 
+    /// Used internally to send an envelope either to this world or to the network.
     private void sendEnvelope(Envelope<?> envelope) {
         if (envelope.receiver().serverId() == server.id()) {
             // The actor we want to send the message to is in this world!
@@ -269,10 +277,12 @@ public class World implements SmartLifecycle {
         mailbox.add(envelope);
     }
 
+    // Called every now and then to terminate any pending requests that are pending for way too long.
     @Scheduled(fixedRate = 1000) // todo: configurable rate
     private void cleanupTimedOutRequests() {
         record Entry(long id, PendingRequest request) { }
 
+        // First, identify all requests that have expired.
         var expiredRequests = new ArrayList<Entry>();
         var now = Instant.now();
         pendingRequests.forEach((id, request) -> {
@@ -281,14 +291,22 @@ public class World implements SmartLifecycle {
             }
         });
 
+        // Now, remove them all from the map.
         for (Entry entry : expiredRequests) {
             pendingRequests.remove(entry.id);
         }
 
+        // Then, and only after we've cleaned up the map, mark complete the requests with a failure.
         for (Entry entry : expiredRequests) {
+            // TODO: QUITE IMPORTANT! Queue completions in the event queue for actor because we're hitting
+            //       obvious race conditions!
             entry.request.future.completeExceptionally(new TimeoutException());
         }
     }
 
+    /// A request to an actor to which we're still waiting for its response.
+    ///
+    /// @param future    the future to complete once we receive the response
+    /// @param timeoutAt the time at which we'll give up and mark the request as failed
     record PendingRequest(CompletableFuture<?> future, Instant timeoutAt) { }
 }

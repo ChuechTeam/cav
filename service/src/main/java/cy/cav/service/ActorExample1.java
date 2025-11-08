@@ -59,15 +59,15 @@ class Cook extends Actor {
     static final ActorAddress ELON_MUSK_ADDRESS = new ActorAddress(0, 10);
 }
 
-record SandwichRequest(boolean vegetarian) implements Message.WithResponse<SandwichResponse> { }
+record SandwichRequest(boolean vegetarian) implements Message.Request<SandwichResponse> { }
 
-record SandwichResponse(String ingredients) implements Message { }
+record SandwichResponse(String ingredients) implements Message.Response { }
 
-record PizzaRequest() implements Message.WithResponse<PizzaResponse> { }
+record PizzaRequest() implements Message.Request<PizzaResponse> { }
 
-record PizzaResponse(String ingredients) implements Message { }
+record PizzaResponse(String ingredients) implements Message.Response { }
 
-record YouGotPaidMessage(int amount) implements Message { }
+record YouGotPaidMessage(int amount) implements Message.Notification { }
 
-record YouAreFiredMessage() implements Message { }
+record YouAreFiredMessage() implements Message.Notification { }
 

@@ -67,9 +67,9 @@ public class Router<A extends Actor> {
     /// @param envelope the envelope the actor just received
     @SuppressWarnings("unchecked")
     public void process(A actor, Envelope<?> envelope) {
-        if (envelope.requestId() != 0) {
+        if (envelope.body() instanceof Message.Request) {
             // This is a request, find a function that can respond to the request.
-            Message response = respond(actor, (Envelope<Message.WithResponse<Message>>) envelope);
+            Message.Response response = respond(actor, (Envelope<Message.Request<Message.Response>>) envelope);
 
             if (response != null) {
                 // We called the function and got a response message in return; send our response now.
@@ -83,13 +83,14 @@ public class Router<A extends Actor> {
         receive(actor, envelope);
 
         // todo: respond err if message type not handled by either handler in requests
+        //       Would be bad to let a request timeout because we don't know how to answer...
     }
 
     /// Used internally. Finds the function to use for a request-response envelope, and calls it.
     ///
     /// @return the message created by the function; null when no function found, can't be null if there's a function
     @SuppressWarnings("unchecked")
-    private <O extends Message, I extends Message.WithResponse<O>> O respond(A actor, Envelope<I> envelope) {
+    private <O extends Message.Response, I extends Message.Request<O>> O respond(A actor, Envelope<I> envelope) {
         var handler = (SyncEnvelopeHandler<A, I, O>) syncMappings.getOrDefault(envelope.body().getClass(), null);
 
         if (handler == null) {
@@ -114,8 +115,8 @@ public class Router<A extends Actor> {
     /// @param messageClass the class of the message
     /// @param function     the function to call when receiving the message of this class,
     ///                      with signature `ResponseType func(Actor, Envelope<MessageType>)`
-    public <O extends Message, I extends Message.WithResponse<O>> Router<A> route(Class<I> messageClass,
-                                                                                  SyncEnvelopeHandler<A, I, O> function) {
+    public <O extends Message.Response, I extends Message.Request<O>> Router<A> route(Class<I> messageClass,
+                                                                             SyncEnvelopeHandler<A, I, O> function) {
         syncMappings.put(messageClass, function);
         return this;
     }
@@ -125,8 +126,8 @@ public class Router<A extends Actor> {
     /// @param messageClass the class of the message
     /// @param function     the function to call when receiving the message of this class,
     ///                      with signature `ResponseType func(Actor, MessageType)`
-    public <O extends Message, I extends Message.WithResponse<O>> Router<A> route(Class<I> messageClass,
-                                                                                  SyncBodyHandler<A, I, O> function) {
+    public <O extends Message.Response, I extends Message.Request<O>> Router<A> route(Class<I> messageClass,
+                                                                             SyncBodyHandler<A, I, O> function) {
         return route(messageClass, (A actor, Envelope<I> envelope) -> function.respond(actor, envelope.body()));
     }
 
@@ -153,12 +154,12 @@ public class Router<A extends Actor> {
     // The following looks like entire gibberish, but that's how we need to define lambdas in Java!
 
     @FunctionalInterface
-    public interface SyncEnvelopeHandler<A extends Actor, I extends Message.WithResponse<O>, O extends Message> {
+    public interface SyncEnvelopeHandler<A extends Actor, I extends Message.Request<O>, O extends Message.Response> {
         O respond(A actor, Envelope<I> envelope);
     }
 
     @FunctionalInterface
-    public interface SyncBodyHandler<A extends Actor, I extends Message.WithResponse<O>, O extends Message> {
+    public interface SyncBodyHandler<A extends Actor, I extends Message.Request<O>, O extends Message.Response> {
         O respond(A actor, I body);
     }
 

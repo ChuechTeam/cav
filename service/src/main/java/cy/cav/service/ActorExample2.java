@@ -25,20 +25,15 @@ class Cooker extends Actor {
         super(init);
     }
 
-    static final Router<Cooker> router = new Router<Cooker>()
-            .route(MakeMeASandwich.class, Cooker::handle);
-
     @Override
     protected void process(Envelope<?> envelope) {
-        router.process(this, envelope);
-    }
+        if (envelope.body() instanceof MakeMeASandwich sandwichRequest) {
+            System.out.println("Received the request: " + sandwichRequest);
 
-    SandwichPrepared handle(MakeMeASandwich request) {
-        System.out.println("Received the request: " + request);
+            double price = sandwichRequest.ingredient().equals("tomate") ? 80 : 40;
 
-        double price = request.ingredient().equals("tomate") ? 80 : 40;
-
-        return new SandwichPrepared(price);
+            respond(envelope, new SandwichPrepared(price));
+        }
     }
 }
 
@@ -68,10 +63,10 @@ class Customer extends Actor {
     }
 }
 
-record MakeMeASandwich(String ingredient) implements Message.WithResponse<SandwichPrepared> {
+record MakeMeASandwich(String ingredient) implements Message.Request<SandwichPrepared> {
 }
 
-record SandwichPrepared(double price) implements Message {
+record SandwichPrepared(double price) implements Message.Response {
 }
 
-record SayHi() implements Message { }
+record SayHi() implements Message.Notification { }

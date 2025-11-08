@@ -60,21 +60,35 @@ public abstract class Actor {
         }
     }
 
-    /// Sends a message to another actor. Doesn't wait for its response.
+    /// Sends a **notification** to an actor.
     ///
-    /// @param receiver the actor to send the message to
+    /// Notifications are NOT guaranteed to be sent to the receiver.
+    ///
+    /// @param receiver the id of the actor to send the message to
     /// @param body     the body of the message
-    public final void send(ActorAddress receiver, Message body) {
+    public final void send(ActorAddress receiver, Message.Notification body) {
         world.send(address, receiver, body);
     }
 
-    /// Begins a request-response conversation with another actor.
+    /// Sends a **request** to an actor and **doesn't care about its response**.
     ///
-    /// @param <T>      the type of the response
-    /// @param receiver the actor to send the request to
+    /// Requests are NOT guaranteed to be sent to the destination actor.
+    ///
+    /// @param receiver the id of the actor to send the message to
+    /// @param body     the body of the message
+    public final void send(ActorAddress receiver, Message.Request<?> body) {
+        world.send(address, receiver, body);
+    }
+
+    /// Sends a **request** to an actor, **waiting for its response** in a [CompletionStage].
+    ///
+    /// Requests are NOT guaranteed to be sent to the destination actor.
+    ///
+    /// @param receiver the id of the actor to send the message to
+    /// @param body     the body of the message
     /// @return a [CompletionStage] which will complete successfully once the actor responds properly, or with a failure
     ///         when the actor fails to respond after a certain amount of time
-    public final <T extends Message> CompletionStage<T> query(ActorAddress receiver, Message.WithResponse<T> body) {
+    public final <T extends Message.Response> CompletionStage<T> query(ActorAddress receiver, Message.Request<T> body) {
         return world.query(address, receiver, body);
     }
 
@@ -83,21 +97,29 @@ public abstract class Actor {
     /// Make sure the type of the response matches the type expected by the request! Otherwise, errors may
     /// happen on the receiver.
     ///
+    /// Does nothing if the envelope doesn't have a request id.
+    ///
     /// @param envelope the envelope containing the request
-    /// @param body the response message to send
-    public final void respond(Envelope<?> envelope, Message body) {
+    /// @param body     the response message to send
+    public final void respond(Envelope<?> envelope, Message.Response body) {
         world.respond(address, envelope, body);
     }
 
-    /// Called when the actor receives a message.
+    /// Called when the actor receives an envelope.
     ///
     /// This method is guaranteed to always be called on the same thread.
     ///
     /// @param envelope the envelope containing the message
     protected abstract void process(Envelope<?> envelope);
 
-    /// Called by [World] only to receive messages.
+    /// Called by [World] only to receive messages. Later on we'll have extra logic here.
     void acceptEnvelope(Envelope<?> envelope) {
+        // Don't accept the message if we aren't alive. That sounds obvious but if this ever happens due to a bug
+        // in World... We better be aware of it!
+        if (state != ActorState.ALIVE) {
+            throw new IllegalStateException("Can't accept envelope while not alive!");
+        }
+
         process(envelope);
     }
 
