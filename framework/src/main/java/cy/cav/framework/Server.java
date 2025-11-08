@@ -9,7 +9,7 @@ import org.springframework.stereotype.*;
 import java.security.*;
 import java.util.*;
 
-@Component
+/// Contains information about the server in the network: mainly, its unique id and the application name.
 public class Server {
     private final Long id;
     private final ActorAddress address;
@@ -34,18 +34,22 @@ public class Server {
         appName = environment.getProperty("spring.application.name");
     }
 
+    /// Returns the unique id of this server
     public Long id() {
         return id;
     }
 
+    /// Returns the address identifying this server
     public ActorAddress address() {
         return address;
     }
 
+    /// Returns the unique id of this server in hexadecimal string format.
     public String idString() {
         return idString;
     }
 
+    /// Returns the name of the application this server runs; used for Eureka.
     public String appName() {
         return appName;
     }

@@ -1,7 +1,6 @@
 package cy.cav.framework;
 
 import java.util.concurrent.*;
-import java.util.function.*;
 
 /// An Actor exists in a [World], receiving and sending messages through its lifetime.
 ///
@@ -19,6 +18,7 @@ public abstract class Actor {
     protected final World world;
     /// The address for this actor.
     protected final ActorAddress address;
+    /// The state of this actor.
     private volatile ActorState state;
 
     /// Prepares the Actor to be added in a [World] by accepting a [ActorInit] object,
@@ -64,15 +64,28 @@ public abstract class Actor {
     ///
     /// @param receiver the actor to send the message to
     /// @param body     the body of the message
-    protected final void send(ActorAddress receiver, Message body) {
+    public final void send(ActorAddress receiver, Message body) {
         world.send(address, receiver, body);
     }
 
-    protected final <T extends Message> CompletionStage<T> query(ActorAddress receiver, Message.WithResponse<T> body) {
+    /// Begins a request-response conversation with another actor.
+    ///
+    /// @param <T>      the type of the response
+    /// @param receiver the actor to send the request to
+    /// @return a [CompletionStage] which will complete successfully once the actor responds properly, or with a failure
+    ///         when the actor fails to respond after a certain amount of time
+    public final <T extends Message> CompletionStage<T> query(ActorAddress receiver, Message.WithResponse<T> body) {
         return world.query(address, receiver, body);
     }
 
-    protected final void respond(Envelope<?> envelope, Message body) {
+    /// Responds to a request described by the given envelope.
+    ///
+    /// Make sure the type of the response matches the type expected by the request! Otherwise, errors may
+    /// happen on the receiver.
+    ///
+    /// @param envelope the envelope containing the request
+    /// @param body the response message to send
+    public final void respond(Envelope<?> envelope, Message body) {
         world.respond(address, envelope, body);
     }
 
@@ -84,7 +97,7 @@ public abstract class Actor {
     protected abstract void process(Envelope<?> envelope);
 
     /// Called by [World] only to receive messages.
-    void acceptEnvelope(Envelope envelope) {
+    void acceptEnvelope(Envelope<?> envelope) {
         process(envelope);
     }
 

@@ -25,7 +25,6 @@ import java.util.function.*;
 /// - despawn actors; only actors can despawn themselves using [Actor#despawn()]
 ///
 /// @see Actor
-@Component
 public class World implements SmartLifecycle {
     // Used to write messages in the console with priorities (warning, info, error)
     private static final Logger log = LoggerFactory.getLogger(World.class);
@@ -43,7 +42,7 @@ public class World implements SmartLifecycle {
     private final AtomicLong nextActorNumber = new AtomicLong(1);
     private final AtomicLong nextRequestId = new AtomicLong(1);
 
-    /// Creates a new [World]. Called by Spring.
+    /// Creates a new [World]. Called by [FrameworkConfig].
     World(Server server, OutsideSender outsideSender) {
         this.server = Objects.requireNonNull(server);
         this.outsideSender = Objects.requireNonNull(outsideSender);
@@ -198,7 +197,7 @@ public class World implements SmartLifecycle {
         }
     }
 
-    /// Sends a message to the actor with id `dest`, with the given body and sender actor.
+    /// Sends a message to an actor, using the given body and sender actor.
     ///
     /// Supports sending messages to other servers.
     ///
@@ -213,6 +212,18 @@ public class World implements SmartLifecycle {
         sendEnvelope(envelope);
     }
 
+    /// Begins a request-response conversation to an actor, by sending the given body and sender actor.
+    ///
+    /// Needs a message of type [Message.WithResponse] to know what the response will be.
+    ///
+    /// Requests aren't guaranteed to be sent to the destination actor.
+    ///
+    /// @param sender   the actor that sent the message; can be null
+    /// @param receiver the id of the actor to send the message to
+    /// @param body     the body of the message
+    ///
+    /// @return a [CompletionStage] which will complete successfully once the actor responds properly, or with a failure
+    ///         when the actor fails to respond after a certain amount of time
     public <T extends Message> CompletionStage<T> query(@Nullable ActorAddress sender,
                                                         ActorAddress receiver,
                                                         Message.WithResponse<T> body) {
@@ -253,6 +264,7 @@ public class World implements SmartLifecycle {
         }
     }
 
+    /// Called by [OutsideReceiver] to receive envelopes coming from the network.
     void receive(Envelope<?> envelope) {
         mailbox.add(envelope);
     }

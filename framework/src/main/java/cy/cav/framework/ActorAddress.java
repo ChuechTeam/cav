@@ -25,6 +25,7 @@ public record ActorAddress(long serverId, long actorNumber) {
         return format.toHexDigits(serverId) + ':' + format.toHexDigits(actorNumber);
     }
 
+    /// Converts a [String] to an [ActorAddress]. Null when invalid.
     @JsonCreator
     public static @Nullable ActorAddress fromString(@Nullable String input) {
         if (input == null) {
@@ -45,10 +46,12 @@ public record ActorAddress(long serverId, long actorNumber) {
         }
     }
 
+    /// Creates a new [ActorAddress] identifying a server by its id.
     public static ActorAddress server(long serverId) {
         return new ActorAddress(serverId, 0);
     }
 
+    /// Returns true when this address identifies a server instead of an actor.
     public boolean isServerAddress() {
         return actorNumber == 0;
     }

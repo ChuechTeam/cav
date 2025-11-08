@@ -1,8 +1,9 @@
-
 # Application Configuration
 spring:
   application:
     name: cav-service
+  config:
+    import: application.local.yml
 
 # Server Configuration
 server:
@@ -36,5 +37,7 @@ management:
 logging:
   level:
     cy.cav: INFO
-    com.netflix.discovery: INFO
+    com.netflix.discovery: WARN
     com.netflix.eureka: WARN
+    org.springframework.web.servlet: WARN
+    org.springframework.boot.devtools: WARN

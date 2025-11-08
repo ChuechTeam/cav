@@ -9,5 +9,8 @@ import com.fasterxml.jackson.annotation.*;
         property = "type"
 )
 public interface Message {
+    /// A request that expects a response of type [T].
+    ///
+    /// Can be used in [World#query(cy.cav.framework.ActorAddress, cy.cav.framework.ActorAddress, cy.cav.framework.Message.WithResponse)].
     interface WithResponse<T extends Message> extends Message {}
 }

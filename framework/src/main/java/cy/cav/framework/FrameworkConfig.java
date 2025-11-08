@@ -1,42 +1,54 @@
 package cy.cav.framework;
 
-import com.netflix.appinfo.*;
-import org.springframework.beans.*;
+import com.netflix.discovery.*;
 import org.springframework.beans.factory.*;
-import org.springframework.beans.factory.annotation.*;
-import org.springframework.beans.factory.config.*;
 import org.springframework.boot.autoconfigure.*;
 import org.springframework.boot.autoconfigure.condition.*;
-import org.springframework.boot.web.context.*;
-import org.springframework.cloud.commons.util.*;
 import org.springframework.cloud.netflix.eureka.*;
-import org.springframework.context.*;
 import org.springframework.context.annotation.*;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.core.env.*;
-import org.springframework.lang.*;
 import org.springframework.scheduling.annotation.*;
-import org.springframework.stereotype.*;
-import org.springframework.web.reactive.config.*;
 
-import java.util.*;
-
-/// Configuration of the library for Spring Boot. Also configures Eureka.
+/// Configures all Spring Beans of the framework. Also configures Eureka.
 @AutoConfiguration
-@ComponentScan
 @EnableScheduling
 @PropertySource("classpath:application.properties")
+@AutoConfigureBefore(EurekaClientAutoConfiguration.class)
 public class FrameworkConfig {
     @Bean
-    BeanPostProcessor eurekaInstanceConfigCustomizer(Server server) {
-        return new BeanPostProcessor() {
-            @Override
-            public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
-                if (bean instanceof EurekaInstanceConfigBean instanceConfigBean) {
-                    instanceConfigBean.setInstanceId(server.idString());
-                }
-                return bean;
-            }
-        };
+    EurekaInit eurekaInit(EurekaInstanceConfigBean config, Server server) {
+        return new EurekaInit(config, server);
+    }
+
+    @Bean
+    World world(Server server, OutsideSender outsideSender) {
+        return new World(server, outsideSender);
+    }
+
+    // Allows users of the framework to put their own Server settings.
+    @Bean
+    @ConditionalOnMissingBean
+    Server server(Environment environment) {
+        return new Server(environment);
+    }
+
+    @Bean
+    OutsideSender outsideSender(ObjectProvider<EurekaClient> eurekaClientProvider, Server server) {
+        return new OutsideSender(eurekaClientProvider, server);
+    }
+
+    @Bean
+    OutsideReceiver outsideReceiver(World world, Server server) {
+        return new OutsideReceiver(world, server);
+    }
+
+    /// Initializes the Eureka configuration with the right settings.
+    private static class EurekaInit {
+        EurekaInit(EurekaInstanceConfigBean config, Server server) {
+            // Before we register this server with Eureka,
+            // put the correct instance id: the hexadecimal format of this server's instance id.
+            config.setInstanceId(server.idString());
+        }
     }
 }
