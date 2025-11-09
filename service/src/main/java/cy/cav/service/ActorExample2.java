@@ -56,6 +56,11 @@ class Customer extends Actor {
     }
 
     @Override
+    protected void despawned() {
+        System.out.println("Bye from customer.");
+    }
+
+    @Override
     protected void process(Envelope<?> envelope) {
         if (envelope.body() instanceof SayHi) {
             System.out.println("Hi from customer");

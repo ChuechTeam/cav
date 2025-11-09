@@ -6,6 +6,8 @@ import org.springframework.boot.context.event.*;
 import org.springframework.context.*;
 import org.springframework.stereotype.*;
 
+import java.util.*;
+
 @Component
 @ConditionalOnBooleanProperty("cav.example1")
 class ActorExample1 implements ApplicationListener<ApplicationStartedEvent> {
@@ -15,11 +17,24 @@ class ActorExample1 implements ApplicationListener<ApplicationStartedEvent> {
 
     @Override
     public void onApplicationEvent(ApplicationStartedEvent event) {
+        ActorAddress cookAddress = world.spawn(Cook::new);
+
+        world.send(null, cookAddress, new YouGotPaidMessage(150));
+
+        world.query(null, cookAddress, new SandwichRequest(true))
+                .thenAccept(response -> System.out.println("Sandwich reçu : " + response.ingredients()));
+
+        world.query(null, cookAddress, new PizzaRequest())
+                .thenAccept(response -> System.out.println("Pizza reçue : " + response.ingredients()));
+
+        ActorAddress hrAddress = world.spawn(ToxicHR::new);
+
+        world.send(null, hrAddress, new FireSomeone(cookAddress));
     }
 }
 
 class Cook extends Actor {
-    protected Cook(ActorInit init) {
+    Cook(ActorInit init) {
         super(init);
     }
 
@@ -41,7 +56,7 @@ class Cook extends Actor {
     }
 
     PizzaResponse givePizza(Envelope<PizzaRequest> envelope) {
-        if (envelope.sender().equals(ELON_MUSK_ADDRESS)) {
+        if (Objects.equals(envelope.sender(), ELON_MUSK_ADDRESS)) {
             return new PizzaResponse("Pizza Tesla");
         } else {
             return new PizzaResponse("Pizza quatre fromages");
@@ -59,6 +74,24 @@ class Cook extends Actor {
     static final ActorAddress ELON_MUSK_ADDRESS = new ActorAddress(0, 10);
 }
 
+class ToxicHR extends Actor {
+    ToxicHR(ActorInit init) {
+        super(init);
+    }
+
+    static final Router<ToxicHR> router = new Router<ToxicHR>()
+            .route(FireSomeone.class, ToxicHR::fire);
+
+    @Override
+    protected void process(Envelope<?> envelope) { router.process(this, envelope); }
+
+    void fire(FireSomeone fireSomeone) {
+        System.out.println("Je vais virer un employé j'adore ça");
+
+        send(fireSomeone.actor(), new YouAreFiredMessage());
+    }
+}
+
 record SandwichRequest(boolean vegetarian) implements Message.Request<SandwichResponse> { }
 
 record SandwichResponse(String ingredients) implements Message.Response { }
@@ -71,3 +104,4 @@ record YouGotPaidMessage(int amount) implements Message.Notification { }
 
 record YouAreFiredMessage() implements Message.Notification { }
 
+record FireSomeone(ActorAddress actor) implements Message.Notification { }

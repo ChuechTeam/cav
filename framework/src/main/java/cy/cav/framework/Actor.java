@@ -10,7 +10,8 @@ import java.util.concurrent.*;
 /// - do stuff when spawning by overriding [#spawned()]
 /// - do stuff when despawning by overriding [#despawned()]
 /// - despawn yourself with [#despawn()]
-/// - send messages with [#send(ActorAddress, Message)]
+/// - send notifications with [#send(ActorAddress, Message.Notification)]
+/// - send requests with [#send(ActorAddress, Message.Request)]
 /// - know your address with [#address]
 /// - know the world you're in with [#world] (which allows to spawn actors...)
 public abstract class Actor {
@@ -82,6 +83,14 @@ public abstract class Actor {
 
     /// Sends a **request** to an actor, **waiting for its response** in a [CompletionStage].
     ///
+    /// The [CompletionStage] will be complete:
+    /// - successfully, when the receiver responds to this request
+    /// - unsuccessfully, when the receiver takes too long to respond (30 seconds) or doesn't know how to handle the request (TODO)
+    ///
+    /// The [CompletionStage] will complete on a thread that makes it safe to change this actor's state.
+    ///
+    /// The [CompletionStage] will NEVER complete if this actor is dead once the request ends.
+    ///
     /// Requests are NOT guaranteed to be sent to the destination actor.
     ///
     /// @param receiver the id of the actor to send the message to
@@ -108,6 +117,14 @@ public abstract class Actor {
     /// Called when the actor receives an envelope.
     ///
     /// This method is guaranteed to always be called on the same thread.
+    ///
+    /// **IMPORTANT: Avoid running long-lasting operations in this method.**
+    /// Things like file system operations, sleeping, waiting should be done either:
+    /// - with asynchronous APIs
+    /// - on another thread
+    ///
+    /// Otherwise, the whole world stops processing messages because one actor is taking ages processing
+    /// its messages!
     ///
     /// @param envelope the envelope containing the message
     protected abstract void process(Envelope<?> envelope);

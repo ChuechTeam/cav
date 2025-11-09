@@ -74,13 +74,11 @@ public class Router<A extends Actor> {
             if (response != null) {
                 // We called the function and got a response message in return; send our response now.
                 actor.respond(envelope, response);
-                return;
             }
+        } else {
+            // This is a notification, find a function that can respond to the notification.
+            receive(actor, envelope);
         }
-
-        // Either this isn't a request, or there isn't any sync function available for the request.
-        // Either way, try to find an async function that does the job.
-        receive(actor, envelope);
 
         // todo: respond err if message type not handled by either handler in requests
         //       Would be bad to let a request timeout because we don't know how to answer...
@@ -131,12 +129,14 @@ public class Router<A extends Actor> {
         return route(messageClass, (A actor, Envelope<I> envelope) -> function.respond(actor, envelope.body()));
     }
 
+    // TODO: Completable future for request/response... If we ever need that?
+
     /// Calls the function when receiving a **notification** of the given class.
     ///
     /// @param messageClass the class of the message
     /// @param function     the function to call when receiving the message of this class,
     ///                      with signature `void func(Actor, Envelope<MessageType>)`
-    public <I extends Message> Router<A> route(Class<I> messageClass, AsyncEnvelopeHandler<A, I> function) {
+    public <I extends Message.Notification> Router<A> route(Class<I> messageClass, AsyncEnvelopeHandler<A, I> function) {
         asyncMappings.put(messageClass, function);
         return this;
     }
@@ -146,7 +146,7 @@ public class Router<A extends Actor> {
     /// @param messageClass the class of the message
     /// @param function     the function to call when receiving the message of this class,
     ///                      with signature `void func(Actor, MessageType>`
-    public <I extends Message> Router<A> route(Class<I> messageClass, AsyncBodyHandler<A, I> function) {
+    public <I extends Message.Notification> Router<A> route(Class<I> messageClass, AsyncBodyHandler<A, I> function) {
         asyncMappings.put(messageClass, (A actor, Envelope<I> envelope) -> function.receive(actor, envelope.body()));
         return this;
     }

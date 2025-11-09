@@ -16,7 +16,7 @@ import java.util.function.*;
 /// ## What you can do with it
 ///
 /// - spawn actors with [#spawn(java.util.function.Function)]
-/// - send messages with [#send(ActorAddress, ActorAddress, Message)]
+/// - send notifications with [#send(ActorAddress, ActorAddress, Message.Notification)]
 /// - send requests with [#query(ActorAddress, ActorAddress, Message.Request)]
 /// - start processing messages with [#start()]
 ///
@@ -85,22 +85,29 @@ public class World implements SmartLifecycle {
                 envelope = mailbox.take();
             } catch (InterruptedException e) {
                 // The thread is stopping; stop listening to messages in the envelope queue.
-                return;
+                break;
             }
 
-            // Make sure this envelope is actually destined to this server. Else it doesn't make any sense.
+            // Make sure this envelope is actually destined for this server. Else it doesn't make any sense.
             if (envelope.receiver().serverId() != server.id()) {
                 log.warn("Somehow an envelope with the wrong server id made its way into this world's mailbox: {}", envelope);
                 continue;
             }
 
-            // See if this envelope is destined to this server, in which case we're processing a
+            // See if this envelope is destined for this server, in which case we're processing a
             // response to a request.
             if (envelope.receiver().isServerAddress()) {
                 // Find the request this envelope responds to.
                 PendingRequest request = pendingRequests.remove(envelope.requestId());
                 if (request == null) {
                     log.warn("Unknown request {} for response given by envelope: {}", envelope.requestId(), envelope);
+                    continue;
+                }
+
+                // If an actor sent this request, we need to make sure it's still alive!
+                // Otherwise, ignore the request.
+                if (request.senderActorNum != 0 && !actors.containsKey(request.senderActorNum)) {
+                    log.info("Received response envelope for request {}, but sender is dead! {}", envelope.requestId(), envelope);
                     continue;
                 }
 
@@ -135,6 +142,12 @@ public class World implements SmartLifecycle {
                 // So just ignore it!
                 log.warn("Received envelope for an unknown actor: {}", envelope);
             }
+        }
+
+        // The main loop has ended; it's time to destroy all actors.
+        log.info("Main loop ended; despawning all actors...");
+        for (Actor actor : actors.values()) {
+            actor.reportDespawned();
         }
     }
 
@@ -222,6 +235,15 @@ public class World implements SmartLifecycle {
 
     /// Sends a **request** to an actor, **waiting for its response** in a [CompletionStage].
     ///
+    /// The [CompletionStage] will be complete:
+    /// - successfully, when the receiver responds to this request
+    /// - unsuccessfully, when the receiver takes too long to respond (30 seconds) or doesn't know how to handle the request (TODO)
+    ///
+    /// The [CompletionStage] will always complete on the World main loop thread.
+    ///
+    /// The [CompletionStage] will NEVER complete if the sender actor is dead once the request ends. Note that this
+    /// applies only if the sender address is given and has the same server id as this world's server.
+    ///
     /// Requests are NOT guaranteed to be sent to the destination actor.
     ///
     /// @param sender   the actor that sent the message; can be null
@@ -234,9 +256,10 @@ public class World implements SmartLifecycle {
                                                                  Message.Request<T> body) {
         // Create a future for this request, which will complete once we receive the response.
         // TODO: Configurable timeout
-        var requestId = nextRequestId.getAndIncrement();
         var future = new CompletableFuture<T>();
-        pendingRequests.put(requestId, new PendingRequest(future, Instant.now().plusSeconds(30)));
+        long requestId = nextRequestId.getAndIncrement();
+        long senderNum = sender != null && sender.serverId() == server.id() ? sender.actorNumber() : 0;
+        pendingRequests.put(requestId, new PendingRequest(future, Instant.now().plusSeconds(30), senderNum));
 
         // Put the message in an envelope, so the postman "knows" which actor to send the message to.
         var envelope = new Envelope<>(sender, receiver, requestId, body, Instant.now());
@@ -306,7 +329,8 @@ public class World implements SmartLifecycle {
 
     /// A request to an actor to which we're still waiting for its response.
     ///
-    /// @param future    the future to complete once we receive the response
-    /// @param timeoutAt the time at which we'll give up and mark the request as failed
-    record PendingRequest(CompletableFuture<?> future, Instant timeoutAt) { }
+    /// @param future         the future to complete once we receive the response
+    /// @param timeoutAt      the time at which we'll give up and mark the request as failed
+    /// @param senderActorNum the actor who started the request; 0 when there's no actor
+    record PendingRequest(CompletableFuture<?> future, Instant timeoutAt, long senderActorNum) { }
 }
