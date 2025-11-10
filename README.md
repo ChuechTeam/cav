@@ -22,3 +22,5 @@ Linux : `./run.py client`
 ### À faire
 
 Docker compose, ou script python plus agréable, choix des acteurs pour chaque instance de service...
+
+Faire un client front
