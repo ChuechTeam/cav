@@ -1,56 +1,25 @@
 package cy.cav.framework;
 
-import jakarta.inject.*;
-import org.springframework.beans.factory.annotation.*;
-import org.springframework.boot.context.properties.*;
-import org.springframework.core.env.*;
-import org.springframework.stereotype.*;
+import jakarta.annotation.*;
 
-import java.security.*;
 import java.util.*;
 
 /// Contains information about the server in the network: mainly, its unique id and the application name.
-public class Server {
-    private final Long id;
-    private final ActorAddress address;
-    private final String idString;
-    private final String appName;
-
-    Server(Environment environment) {
-        try {
-            // Pick a random server id using cryptographically secure randomness.
-            // It is used for registration with the Eureka server.
-            id = SecureRandom.getInstanceStrong().nextLong();
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException("SecureRandom isn't supported; cannot generate server id.", e);
-        }
-
-        // Hex-formatted string for good measure
-        idString = HexFormat.of().toHexDigits(id);
-
-        address = ActorAddress.server(id);
-
-        // Store the application name from the environment
-        appName = environment.getProperty("spring.application.name");
+///
+/// @param id       the unique id of this server
+/// @param address  the address identifying this server
+/// @param idString the unique id of this server in hexadecimal string format
+/// @param appName  the name of the application this server runs; used for Eureka.
+/// @param url      the url of this server; can be null when the server is the one running the app
+/// @param metadata the metadata registered for this server in Eureka
+public record Server(Long id, ActorAddress address, String idString, String appName, @Nullable String url,
+                     Map<String, String> metadata) {
+    public Server(Long id, String appName, @Nullable String url, Map<String, String> metadata) {
+        this(id, ActorAddress.server(id), HexFormat.of().toHexDigits(id), appName, url, Map.copyOf(metadata));
     }
 
-    /// Returns the unique id of this server
-    public Long id() {
-        return id;
-    }
-
-    /// Returns the address identifying this server
-    public ActorAddress address() {
-        return address;
-    }
-
-    /// Returns the unique id of this server in hexadecimal string format.
-    public String idString() {
-        return idString;
-    }
-
-    /// Returns the name of the application this server runs; used for Eureka.
-    public String appName() {
-        return appName;
+    /// Makes an actor address with this server's id and the given actor number.
+    public ActorAddress address(long actorNumber) {
+        return new ActorAddress(id, actorNumber);
     }
 }

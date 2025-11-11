@@ -10,17 +10,15 @@ import org.springframework.web.bind.annotation.*;
 class OutsideReceiver {
     private static final Logger log = LoggerFactory.getLogger(OutsideReceiver.class);
     private final World world;
-    private final Server server;
 
-    OutsideReceiver(World world, Server server) {
+    OutsideReceiver(World world) {
         this.world = world;
-        this.server = server;
     }
 
     @PostMapping("/mailbox")
     ResponseEntity<?> receive(@RequestBody Envelope<Message> envelope, HttpServletRequest httpServletRequest) {
         // Make sure this envelope is destined to this server.
-        if (server.id() != envelope.receiver().serverId()) {
+        if (world.server().id() != envelope.receiver().serverId()) {
             log.warn("Received invalid envelope from host {} with a wrong server id: {}",
                     httpServletRequest.getRemoteAddr(), envelope);
 

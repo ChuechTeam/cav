@@ -34,6 +34,12 @@
             <version>1.0-SNAPSHOT</version>
         </dependency>
 
+        <dependency>
+            <groupId>cy.cav</groupId>
+            <artifactId>protocol</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
+
         <!-- Broken? -->
 <!--        <dependency>-->
 <!--            <groupId>org.springframework.boot</groupId>-->

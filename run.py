@@ -36,7 +36,7 @@ if java_path is None:
     print("No java executable found! Please install Java 25, take a look at the README for some info.", file=sys.stderr)
     sys.exit(1)
 
-client_jar_path = root_path / "client" / "target" / "client-jar-with-dependencies.jar"
+client_jar_path = root_path / "client" / "target" / "client.jar"
 service_jar_path = root_path / "service" / "target" / "service.jar"
 discovery_jar_path = root_path / "discovery" / "target" / "discovery.jar"
 

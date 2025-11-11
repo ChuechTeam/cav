@@ -1,23 +1,22 @@
 # Application Configuration
 spring:
   application:
-    name: cav-service
+    name: cav-client
   config:
     import: optional:application.local.yml
+  threads:
+    virtual:
+      enabled: true
 
 cav:
   framework:
-    metadata:
-      salut: ça va ?
-      test: 1 2 3
-      role: PREFECTURE
     applications:
       - cav-service
-      - cav-client
+
 
 # Server Configuration
 server:
-  port: 0  # Random port for multiple instances
+  port: 4444
 
 # Eureka Client Configuration
 eureka:
@@ -27,11 +26,6 @@ eureka:
       defaultZone: http://localhost:8761/eureka/
   instance:
     prefer-ip-address: true
-#
-#  instance:
-#    # === Status Page & Health Check ===
-#    status-page-url-path: ${management.server.servlet.context-path:}/actuator/info
-#    health-check-url-path: ${management.server.servlet.context-path:}/actuator/health
 
 # Actuator Configuration (for health checks)
 management:

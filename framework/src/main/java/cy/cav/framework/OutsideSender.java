@@ -26,17 +26,13 @@ import java.util.concurrent.*;
 class OutsideSender {
     private static final Logger log = LoggerFactory.getLogger(OutsideSender.class);
 
-    private final ObjectProvider<EurekaClient> eurekaClientProvider;
-    private final Server server;
+    private final Network network;
     private final WebClient webClient; // Allows us to do run requests in a callback fashion
 
-    private final Map<Long, String> serverMap = new ConcurrentHashMap<>();
-
-    OutsideSender(ObjectProvider<EurekaClient> eurekaClientProvider, Server server) {
+    OutsideSender(Network network) {
         // We need to use ObjectProvider cause otherwise EurekaClient is completely broken
         // and registers with port 0??
-        this.eurekaClientProvider = eurekaClientProvider;
-        this.server = server;
+        this.network = network;
         this.webClient = WebClient.builder()
                 .defaultHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE)
                 .build();
@@ -47,7 +43,9 @@ class OutsideSender {
     /// May not succeed due to network errors.
     public void send(Envelope<?> envelope) {
         // Find the URL of the server this envelope should be sent to.
-        String receiverUrl = serverMap.getOrDefault(envelope.receiver().serverId(), null);
+        Server receiver = network.servers().getOrDefault(envelope.receiver().serverId(), null);
+        String receiverUrl = receiver != null ? receiver.url() : null;
+
         if (receiverUrl == null) {
             log.error("Failed to send envelope, can't find URL for receiver server id: {}", envelope);
             // todo: retry sending after a while then give up. Hint: TaskScheduler
@@ -72,39 +70,5 @@ class OutsideSender {
                     }
                 }, e -> log.error("Failed to send envelope to external server at URL {}: {}",
                         receiverUrl, envelope, e));
-    }
-
-    @EventListener(WebServerInitializedEvent.class)
-    private void onWebServerReady() {
-        // Now we know our port, grab the eureka client and listen to its CacheRefreshedEvent
-        // which triggers every few seconds.
-        EurekaClient client = eurekaClientProvider.getObject();
-        client.registerEventListener(e -> onEvent(e, client));
-    }
-
-    private void onEvent(EurekaEvent event, EurekaClient eurekaClient) {
-        if (!(event instanceof CacheRefreshedEvent)) { return; }
-
-        // The Eureka client has updated its cache, let's see which servers are available on the network and
-        // update our local cache.
-        Application application = eurekaClient.getApplication(server.appName());
-        if (application == null) {
-            // Shouldn't happen, but if it does it's just that Eureka's broken for a moment.
-            return;
-        }
-
-        // Look over all registered servers.
-        for (InstanceInfo instance : application.getInstances()) {
-            // Because the instance id is a string, we need to convert it to a number.
-            // Server ids are stored in hexadecimal format, so we need to indicate
-            // that it's in a hexa (16) format.
-            long serverId = Long.parseUnsignedLong(instance.getInstanceId(), 16);
-
-            // Put the server in the map, and don't register ourselves, no need to.
-            if (serverId != server.id()) {
-                serverMap.put(serverId, instance.getHomePageUrl());
-            }
-            // TODO: Remove servers that are gone from Eureka. Right now it's not a big deal though.
-        }
     }
 }

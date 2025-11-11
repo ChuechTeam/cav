@@ -25,6 +25,9 @@ import java.util.function.*;
 ///
 /// @see Actor
 public class World implements SmartLifecycle {
+    /// Maximum value for a special actor number, exclusive.
+    public static final long SPECIAL_ACTOR_NUM_MAX = 66536;
+
     // Used to write messages in the console with priorities (warning, info, error)
     private static final Logger log = LoggerFactory.getLogger(World.class);
 
@@ -38,10 +41,10 @@ public class World implements SmartLifecycle {
     private volatile boolean running = false;
     private volatile Thread mainLoopThread = null;
 
-    private final AtomicLong nextActorNumber = new AtomicLong(1);
+    private final AtomicLong nextActorNumber = new AtomicLong(SPECIAL_ACTOR_NUM_MAX);
     private final AtomicLong nextRequestId = new AtomicLong(1);
 
-    /// Creates a new [World]. Called by [FrameworkConfig].
+    /// Creates a new [World]. Called by [Framework].
     World(Server server, OutsideSender outsideSender) {
         this.server = Objects.requireNonNull(server);
         this.outsideSender = Objects.requireNonNull(outsideSender);
@@ -151,7 +154,18 @@ public class World implements SmartLifecycle {
         }
     }
 
-    /// Spawns a new actor using the given creator function.
+    /// Spawns a new actor using the given creator function, with a generated actor number.
+    ///
+    /// The creator function accepts an [ActorInit] object, containing the id of the new actor (among other things),
+    /// and returns an [Actor].
+    ///
+    /// @param creator the creator function
+    /// @return the address of the created actor
+    public ActorAddress spawn(Function<ActorInit, Actor> creator) {
+        return spawn(creator, 0);
+    }
+
+    /// Spawns a new actor using the given creator function, using a custom or generated actor number.
     ///
     /// The creator function accepts an [ActorInit] object, containing the id of the new actor (among other things),
     /// and returns an [Actor].
@@ -173,21 +187,28 @@ public class World implements SmartLifecycle {
     /// }
     /// ```
     ///
-    /// @param creator the creator function
-    /// @return the id of the newly created actor
-    public ActorAddress spawn(Function<ActorInit, Actor> creator) {
+    /// @param creator       the creator function
+    /// @param specialNumber the special actor number to use; 0 will generate a unique actor number
+    /// @return the address of the created actor
+    public ActorAddress spawn(Function<ActorInit, Actor> creator, long specialNumber) {
+        if (specialNumber < 0 || specialNumber >= SPECIAL_ACTOR_NUM_MAX) {
+            throw new IllegalArgumentException("Invalid special number: " + specialNumber);
+        }
+
         // Pick the next actor number by incrementing the global counter,
         // and use the serverId to make the final ActorId.
-        long actorNumber = nextActorNumber.getAndIncrement();
+        long actorNumber = specialNumber != 0 ? specialNumber : nextActorNumber.getAndIncrement();
         ActorAddress id = new ActorAddress(server.id(), actorNumber);
 
         // Create the actor using the function the user gave us. Give it the id we made up.
         Actor actor = creator.apply(new ActorInit(this, id));
-
         Objects.requireNonNull(actor, "The created actor is null!");
 
         // Register the actor in the map of existing actors and let it know that we've spawned it.
-        actors.put(id.actorNumber(), actor);
+        Actor existing = actors.putIfAbsent(id.actorNumber(), actor);
+        if (existing != null) {
+            throw new IllegalStateException("An actor with the same number already exists! " + actorNumber);
+        }
         actor.reportSpawned(); // todo: what if this throws an exception? + possible race condition
 
         log.info("New actor of id {} spawned: {}", id, actor);
@@ -216,6 +237,7 @@ public class World implements SmartLifecycle {
     /// @param body     the body of the message
     public void send(@Nullable ActorAddress sender, ActorAddress receiver, Message.Notification body) {
         // Put the message in an envelope, so the postman "knows" which actor to send the message to.
+        sender = sender != null ? sender : server.address();
         var envelope = new Envelope<>(sender, receiver, 0, body, Instant.now());
         sendEnvelope(envelope);
     }
@@ -229,6 +251,7 @@ public class World implements SmartLifecycle {
     /// @param body     the body of the message
     public void send(@Nullable ActorAddress sender, ActorAddress receiver, Message.Request<?> body) {
         // Put the message in an envelope, so the postman "knows" which actor to send the message to.
+        sender = sender != null ? sender : server.address();
         var envelope = new Envelope<>(sender, receiver, 0, body, Instant.now());
         sendEnvelope(envelope);
     }
@@ -262,6 +285,7 @@ public class World implements SmartLifecycle {
         pendingRequests.put(requestId, new PendingRequest(future, Instant.now().plusSeconds(30), senderNum));
 
         // Put the message in an envelope, so the postman "knows" which actor to send the message to.
+        sender = sender != null ? sender : server.address();
         var envelope = new Envelope<>(sender, receiver, requestId, body, Instant.now());
         sendEnvelope(envelope);
 
@@ -269,8 +293,26 @@ public class World implements SmartLifecycle {
         return future;
     }
 
+    /// Sends a **request** to an actor and waits for the response.
+    ///
+    /// Should not be used in actors!
+    ///
+    /// Requests are NOT guaranteed to be sent to the destination actor.
+    ///
+    /// @param receiver the id of the actor to send the message to
+    /// @param body     the body of the message
+    public <T extends Message.Response> T querySync(ActorAddress receiver, Message.Request<T> body) {
+        try {
+            return query(null, receiver, body)
+                    .toCompletableFuture()
+                    .get();
+        } catch (InterruptedException | ExecutionException e) {
+            throw new RuntimeException("Query sync failed", e);
+        }
+    }
+
     /// Can only be called by [Actor]; it doesn't make sense to respond to requests outside an actor.
-    void respond(@Nullable ActorAddress sender, Envelope<?> envelope, Message.Response body) {
+    void respond(ActorAddress responder, Envelope<?> envelope, Message.Response body) {
         if (envelope.requestId() == 0) {
             // Don't send the message if this isn't a request. That means the sender doesn't care about our response,
             // not that something's fundamentally wrong or something.
@@ -278,7 +320,7 @@ public class World implements SmartLifecycle {
         }
 
         // Put the message in an envelope, so the postman "knows" which actor to send the message to.
-        var newEnv = new Envelope<>(sender, server.address(), envelope.requestId(), body, Instant.now());
+        var newEnv = new Envelope<>(responder, envelope.sender(), envelope.requestId(), body, Instant.now());
         sendEnvelope(newEnv);
     }
 
@@ -299,6 +341,9 @@ public class World implements SmartLifecycle {
     void receive(Envelope<?> envelope) {
         mailbox.add(envelope);
     }
+
+    /// Returns the server this world runs on.
+    public Server server() { return server; }
 
     // Called every now and then to terminate any pending requests that are pending for way too long.
     @Scheduled(fixedRate = 1000) // todo: configurable rate

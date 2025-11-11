@@ -30,6 +30,7 @@
         <module>framework</module>
         <module>client</module>
         <module>discovery</module>
+        <module>protocol</module>
     </modules>
 
     <dependencyManagement>
