@@ -4,19 +4,6 @@ spring:
     name: cav-service
   config:
     import: optional:application.local.yml
-  
-  # H2 Database Configuration
-  datasource:
-    url: jdbc:h2:mem:cav
-    driver-class-name: org.h2.Driver
-  jpa:
-    hibernate:
-      ddl-auto: create-drop  # Recreate tables on each start
-    show-sql: true  # Show SQL queries in logs (useful for debugging)
-  h2:
-    console:
-      enabled: true
-      path: /h2-console
 
 cav:
   framework:

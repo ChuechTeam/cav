@@ -28,7 +28,6 @@
     <modules>
         <module>service</module>
         <module>framework</module>
-        <module>allocataires</module>
         <module>client</module>
         <module>discovery</module>
         <module>protocol</module>

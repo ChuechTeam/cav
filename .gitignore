@@ -41,5 +41,3 @@ build/
 .DS_Store
 
 application.local.yml
-
-design-work/
