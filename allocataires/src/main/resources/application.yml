@@ -1,18 +1,18 @@
 # Application Configuration
 spring:
   application:
-    name: cav-service
+    name: cav-allocataires
   config:
     import: optional:application.local.yml
   
-  # H2 Database Configuration
+  # H2 Database Configuration (partagée avec le service)
   datasource:
     url: jdbc:h2:mem:cav
     driver-class-name: org.h2.Driver
   jpa:
     hibernate:
       ddl-auto: create-drop  # Recreate tables on each start
-    show-sql: true  # Show SQL queries in logs (useful for debugging)
+    show-sql: true  # Show SQL queries in logs
   h2:
     console:
       enabled: true
@@ -21,32 +21,24 @@ spring:
 cav:
   framework:
     metadata:
-      salut: ça va ?
-      test: 1 2 3
-      role: PREFECTURE
+      role: ALLOCATAIRES_API
     applications:
       - cav-service
-      - cav-client
+      - cav-allocataires
 
 # Server Configuration
 server:
-  port: 0  # Random port for multiple instances
+  port: 8080  # Fixed port for API
 
 # Eureka Client Configuration
 eureka:
   client:
-    # === Eureka Server Location ===
-    service-url: # todo: make it configurable? env var?
+    service-url:
       defaultZone: http://localhost:8761/eureka/
   instance:
     prefer-ip-address: true
-#
-#  instance:
-#    # === Status Page & Health Check ===
-#    status-page-url-path: ${management.server.servlet.context-path:}/actuator/info
-#    health-check-url-path: ${management.server.servlet.context-path:}/actuator/health
 
-# Actuator Configuration (for health checks)
+# Actuator Configuration
 management:
   endpoints:
     web:
@@ -64,3 +56,4 @@ logging:
     com.netflix.eureka: WARN
     org.springframework.web.servlet: WARN
     org.springframework.boot.devtools: WARN
+

@@ -9,53 +9,21 @@
         <version>1.0-SNAPSHOT</version>
     </parent>
 
-    <artifactId>service</artifactId>
-    <name>CAV Service</name>
-    <description>The service hosting some CAV actors.</description>
+    <artifactId>allocataires</artifactId>
+    <name>CAV Allocataires</name>
+    <description>The allocataires service exposing REST API</description>
+
     <dependencies>
+        <!-- Spring Boot Web (REST API) -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
+
+        <!-- Eureka Client (Service Discovery) -->
         <dependency>
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-devtools</artifactId>
-            <scope>runtime</scope>
-            <optional>true</optional>
-        </dependency>
-
-        <dependency>
-            <groupId>cy.cav</groupId>
-            <artifactId>framework</artifactId>
-            <version>1.0-SNAPSHOT</version>
-        </dependency>
-
-        <dependency>
-            <groupId>cy.cav</groupId>
-            <artifactId>protocol</artifactId>
-            <version>1.0-SNAPSHOT</version>
-        </dependency>
-
-        <!-- Broken? -->
-<!--        <dependency>-->
-<!--            <groupId>org.springframework.boot</groupId>-->
-<!--            <artifactId>spring-boot-docker-compose</artifactId>-->
-<!--            <scope>runtime</scope>-->
-<!--            <optional>true</optional>-->
-<!--        </dependency>-->
-
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-test</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
 
         <!-- JPA (Persistence) -->
@@ -76,11 +44,46 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
+
+        <!-- CAV Framework -->
+        <dependency>
+            <groupId>cy.cav</groupId>
+            <artifactId>framework</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
+
+        <!-- CAV Protocol (Messages) -->
+        <dependency>
+            <groupId>cy.cav</groupId>
+            <artifactId>protocol</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
+
+        <!-- Actuator (Monitoring) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+
+        <!-- DevTools (Development) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-devtools</artifactId>
+            <scope>runtime</scope>
+            <optional>true</optional>
+        </dependency>
+
+        <!-- Test -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
-        <!-- Don't append the version to the created jar so we can easily run service.jar -->
-        <finalName>service</finalName>
+        <!-- Don't append version to jar name -->
+        <finalName>allocataires</finalName>
 
         <plugins>
             <plugin>
@@ -91,3 +94,4 @@
     </build>
 
 </project>
+

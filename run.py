@@ -10,6 +10,7 @@
 # Where modules is a list of modules you want to spawn, which can be either:
 # - client
 # - service
+# - allocataires
 # - discovery
 # - all: launches all modules!
 #
@@ -38,19 +39,22 @@ if java_path is None:
 
 client_jar_path = root_path / "client" / "target" / "client.jar"
 service_jar_path = root_path / "service" / "target" / "service.jar"
+allocataires_jar_path = root_path / "allocataires" / "target" / "allocataires.jar"
 discovery_jar_path = root_path / "discovery" / "target" / "discovery.jar"
 
 # Parse the command line args
 run_client = False
 run_service = False
+run_allocataires = False
 run_discovery = False
 for arg in sys.argv:
     if arg == "client" or arg == "all": run_client = True
     if arg == "service" or arg == "all": run_service = True
+    if arg == "allocataires" or arg == "all": run_allocataires = True
     if arg == "discovery" or arg == "all": run_discovery = True
 
-if not run_client and not run_service and not run_discovery:
-    print("No modules to run! Usage: run.py [modules...]. Modules can be 'client', 'service', or 'discovery', or even 'all' if you feel like it!")
+if not run_client and not run_service and not run_allocataires and not run_discovery:
+    print("No modules to run! Usage: run.py [modules...]. Modules can be 'client', 'service', 'allocataires', or 'discovery', or even 'all' if you feel like it!")
     sys.exit(1)
 
 # First off... package things up
@@ -64,6 +68,7 @@ if maven_result.returncode != 0:
 alive_procs = []
 if run_discovery: alive_procs.append(("Discovery", subprocess.Popen([java_path, "-jar", discovery_jar_path], text=True)))
 if run_service: alive_procs.append(("Service", subprocess.Popen([java_path, "-jar", service_jar_path], text=True)))
+if run_allocataires: alive_procs.append(("Allocataires", subprocess.Popen([java_path, "-jar", allocataires_jar_path], text=True)))
 # here we use run to redirect stdin properly else it's a nightmare honestly
 if run_client: subprocess.run([java_path, "-jar", client_jar_path], text=True)
 
