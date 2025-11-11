@@ -15,7 +15,7 @@ public class CavApplication implements ApplicationListener<ApplicationStartedEve
         this.world = world;
     }
 
-    static void main(String[] args) {
+    public static void main(String[] args) {
         SpringApplication.run(CavApplication.class, args);
     }
 
