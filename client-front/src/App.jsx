@@ -1,13 +1,13 @@
 import Layout from './components/Layout'
 import Header from './components/Header'
-import ActorList from './components/ActorList'
+import ServerList from './components/ServerList'
 
 function App() {
   return (
     <Layout>
       <Header />
-      <main className="max-w-7xl mx-auto px-4 py-8">
-        <ActorList />
+      <main className="px-4 py-8 mx-auto max-w-7xl">
+        <ServerList />
       </main>
     </Layout>
   )

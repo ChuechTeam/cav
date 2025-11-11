@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 
-function ActorList() {
+function ServerList() {
   const [servers, setServers] = useState([]);
   const [localServer, setLocalServer] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -257,4 +257,4 @@ function ActorList() {
   );
 }
 
-export default ActorList;
+export default ServerList;
