@@ -12,7 +12,6 @@ cav:
   framework:
     applications:
       - cav-service
-      - cav-allocataires
 
 
 # Server Configuration

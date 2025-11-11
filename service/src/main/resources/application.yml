@@ -27,7 +27,6 @@ cav:
     applications:
       - cav-service
       - cav-client
-      - cav-allocataires
 
 # Server Configuration
 server:
