@@ -4,7 +4,7 @@ spring:
     name: cav-service
   config:
     import: optional:application.local.yml
-
+  
 cav:
   framework:
     metadata:
