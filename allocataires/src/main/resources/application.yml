@@ -28,7 +28,7 @@ cav:
 
 # Server Configuration
 server:
-  port: 8080  # Fixed port for API
+  port: 8181  # Fixed port for API
 
 # Eureka Client Configuration
 eureka:
