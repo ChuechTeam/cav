@@ -2,6 +2,8 @@ package cy.cav.service;
 
 import cy.cav.framework.*;
 import cy.cav.protocol.*;
+import cy.cav.service.actors.calculateurs.RSACalculator;
+import cy.cav.service.store.AllocationStore;
 import org.springframework.boot.*;
 import org.springframework.boot.autoconfigure.*;
 import org.springframework.boot.context.event.*;
@@ -10,9 +12,11 @@ import org.springframework.context.*;
 @SpringBootApplication
 public class CavApplication implements ApplicationListener<ApplicationStartedEvent> {
     private final World world;
+    private final AllocationStore store;
 
-    public CavApplication(World world) {
+    public CavApplication(World world, AllocationStore store) {
         this.world = world;
+        this.store = store;
     }
 
     public static void main(String[] args) {
@@ -23,6 +27,9 @@ public class CavApplication implements ApplicationListener<ApplicationStartedEve
     public void onApplicationEvent(ApplicationStartedEvent event) {
         // Create a new greeter with a special id
         world.spawn(Greeter::new, KnownActors.GREETER);
+        
+        // Spawn RSA calculator actor (création de l'acteur calculateur RSA)
+        world.spawn(init -> new RSACalculator(init, store), KnownActors.CALCULATEUR_RSA);
     }
 }
 
