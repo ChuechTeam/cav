@@ -4,6 +4,10 @@ target/
 !**/src/test/**/target/
 .kotlin
 
+### env files ###
+.env
+.env.*
+
 ### IntelliJ IDEA ###
 .idea
 .idea/**
