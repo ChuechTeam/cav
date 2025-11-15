@@ -17,6 +17,8 @@ public class Allocataire {
     private int numberOfDependents;        // Nombre de personnes à charge (simplifié)
     private double monthlyIncome;           // Revenus mensuels
     private String iban;                   // IBAN pour les versements
+    private String allocataireNumber;      // Numéro d'allocataire (généré automatiquement)
+    private LocalDate registrationDate;     // Date d'inscription
     
     // Constructeur par défaut
     public Allocataire() {
@@ -123,6 +125,22 @@ public class Allocataire {
     
     public void setIban(String iban) {
         this.iban = iban;
+    }
+    
+    public String getAllocataireNumber() {
+        return allocataireNumber;
+    }
+    
+    public void setAllocataireNumber(String allocataireNumber) {
+        this.allocataireNumber = allocataireNumber;
+    }
+    
+    public LocalDate getRegistrationDate() {
+        return registrationDate;
+    }
+    
+    public void setRegistrationDate(LocalDate registrationDate) {
+        this.registrationDate = registrationDate;
     }
     
     /**

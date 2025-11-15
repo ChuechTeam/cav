@@ -1,18 +1,21 @@
 package cy.cav.client.controller;
 
-import cy.cav.client.domain.DemandeAllocation;
 import cy.cav.client.dto.DemandeRSADTO;
 import cy.cav.client.dto.DemandeResponse;
-import cy.cav.client.store.AllocataireStore;
 import cy.cav.framework.*;
 import cy.cav.protocol.KnownActors;
+import cy.cav.protocol.accounts.CheckAccountExistsRequest;
+import cy.cav.protocol.accounts.CheckAccountExistsResponse;
 import cy.cav.protocol.allocations.CalculateRSARequest;
 import cy.cav.protocol.allocations.DecisionAllocationResponse;
+import cy.cav.protocol.demandes.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.UUID;
 
 // REST controller for allocation requests (gestion des demandes d'allocation)
 @RestController
@@ -22,12 +25,10 @@ public class AllocRequestController {
     
     private final World world;
     private final Network network;
-    private final AllocataireStore store;
     
-    public AllocRequestController(World world, Network network, AllocataireStore store) {
+    public AllocRequestController(World world, Network network) {
         this.world = world;
         this.network = network;
-        this.store = store;
     }
     
     // Creates RSA allocation request (création d'une demande RSA)
@@ -35,17 +36,33 @@ public class AllocRequestController {
     public ResponseEntity<DemandeResponse> demanderRSA(@RequestBody DemandeRSADTO dto) {
         log.info("Demande RSA reçue pour allocataire: {}", dto.allocataireId());
         
-        // Check if allocataire exists
-        if (!store.existsAllocataire(dto.allocataireId())) {
-            log.warn("Allocataire non trouvé: {}", dto.allocataireId());
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        // Check if allocataire exists via proxy
+        try {
+            CheckAccountExistsRequest checkRequest = new CheckAccountExistsRequest(dto.allocataireId());
+            ActorAddress proxyAddress = world.server().address(KnownActors.GESTIONNAIRE_COMPTE);
+            CheckAccountExistsResponse checkResponse = world.querySync(proxyAddress, checkRequest);
+            
+            if (!checkResponse.exists()) {
+                log.warn("Allocataire non trouvé: {}", dto.allocataireId());
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            }
+        } catch (Exception e) {
+            log.error("Erreur lors de la vérification de l'allocataire", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
         
-        // Create demande in store
-        DemandeAllocation demande = new DemandeAllocation(dto.allocataireId(), "RSA");
-        store.saveDemande(demande);
-        
-        log.info("Demande créée: {} pour allocataire: {}", demande.getId(), dto.allocataireId());
+        // Create demande via proxy
+        UUID demandeId;
+        try {
+            CreateDemandeRequest createRequest = new CreateDemandeRequest(dto.allocataireId(), "RSA");
+            ActorAddress proxyAddress = world.server().address(KnownActors.GESTIONNAIRE_COMPTE);
+            CreateDemandeResponse createResponse = world.querySync(proxyAddress, createRequest);
+            demandeId = createResponse.demandeId();
+            log.info("Demande créée: {} pour allocataire: {}", demandeId, dto.allocataireId());
+        } catch (Exception e) {
+            log.error("Erreur lors de la création de la demande", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
         
         // Debug: log available servers
         log.info("Serveurs disponibles: {}", network.servers().values().stream()
@@ -60,19 +77,25 @@ public class AllocRequestController {
         if (serviceServer.isEmpty()) {
             log.error("Service cav-service non trouvé via Eureka. Serveurs disponibles: {}", 
                 network.servers().keySet());
-            demande.setStatus("REJECTED");
-            demande.setRejectionReason("Service CAV indisponible");
-            store.saveDemande(demande);
-            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(
-                new DemandeResponse(
-                    demande.getId(),
-                    demande.getStatus(),
+            // Update demande via proxy
+            try {
+                UpdateDemandeRequest updateRequest = new UpdateDemandeRequest(
+                    demandeId, "REJECTED", null, null, "Service CAV indisponible"
+                );
+                ActorAddress proxyAddress = world.server().address(KnownActors.GESTIONNAIRE_COMPTE);
+                world.querySync(proxyAddress, updateRequest);
+            } catch (Exception e) {
+                log.error("Erreur lors de la mise à jour de la demande", e);
+            }
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body(new DemandeResponse(
+                    demandeId,
+                    "REJECTED",
                     null,
                     null,
-                    demande.getRejectionReason(),
-                    demande.getRequestDate()
-                )
-            );
+                    "Service CAV indisponible",
+                    java.time.LocalDate.now()
+                ));
         }
         
         // Get RSA calculator actor address
@@ -95,45 +118,53 @@ public class AllocRequestController {
             
             log.info("Réponse reçue: accepté={}, montant={}€", response.accepted(), response.monthlyAmount());
             
-            // Update demande with response
-            if (response.accepted()) {
-                demande.setStatus("ACCEPTED");
-                demande.setAllocationId(response.allocationId());
-                demande.setMonthlyAmount(response.monthlyAmount());
-            } else {
-                demande.setStatus("REJECTED");
-                demande.setRejectionReason(response.rejectionReason());
+            // Update demande with response via proxy
+            try {
+                UpdateDemandeRequest updateRequest = new UpdateDemandeRequest(
+                    demandeId,
+                    response.accepted() ? "ACCEPTED" : "REJECTED",
+                    response.allocationId(),
+                    response.monthlyAmount(),
+                    response.rejectionReason()
+                );
+                ActorAddress proxyAddress = world.server().address(KnownActors.GESTIONNAIRE_COMPTE);
+                world.querySync(proxyAddress, updateRequest);
+            } catch (Exception e) {
+                log.error("Erreur lors de la mise à jour de la demande", e);
             }
             
-            store.saveDemande(demande);
-            
-            return ResponseEntity.status(HttpStatus.CREATED).body(
-                new DemandeResponse(
-                    demande.getId(),
-                    demande.getStatus(),
-                    demande.getAllocationId(),
-                    demande.getMonthlyAmount(),
-                    demande.getRejectionReason(),
-                    demande.getRequestDate()
-                )
-            );
+            return ResponseEntity.status(HttpStatus.CREATED)
+                .body(new DemandeResponse(
+                    demandeId,
+                    response.accepted() ? "ACCEPTED" : "REJECTED",
+                    response.allocationId(),
+                    response.monthlyAmount(),
+                    response.rejectionReason(),
+                    java.time.LocalDate.now()
+                ));
             
         } catch (Exception e) {
             log.error("Erreur lors de la communication avec le service", e);
-            demande.setStatus("REJECTED");
-            demande.setRejectionReason("Erreur de communication avec le service");
-            store.saveDemande(demande);
+            // Update demande via proxy
+            try {
+                UpdateDemandeRequest updateRequest = new UpdateDemandeRequest(
+                    demandeId, "REJECTED", null, null, "Erreur de communication avec le service"
+                );
+                ActorAddress proxyAddress = world.server().address(KnownActors.GESTIONNAIRE_COMPTE);
+                world.querySync(proxyAddress, updateRequest);
+            } catch (Exception ex) {
+                log.error("Erreur lors de la mise à jour de la demande", ex);
+            }
             
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
-                new DemandeResponse(
-                    demande.getId(),
-                    demande.getStatus(),
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new DemandeResponse(
+                    demandeId,
+                    "REJECTED",
                     null,
                     null,
-                    demande.getRejectionReason(),
-                    demande.getRequestDate()
-                )
-            );
+                    "Erreur de communication avec le service",
+                    java.time.LocalDate.now()
+                ));
         }
     }
 }

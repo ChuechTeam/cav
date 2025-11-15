@@ -18,6 +18,8 @@ public class AllocationStore {
     private final Map<UUID, AllocationActive> allocations = new ConcurrentHashMap<>();
     private final Map<UUID, Versement> versements = new ConcurrentHashMap<>();
     private final Map<UUID, Anomalie> anomalies = new ConcurrentHashMap<>();
+    private final Map<UUID, DemandeAllocation> demandes = new ConcurrentHashMap<>();
+    private final Map<UUID, Reclamation> reclamations = new ConcurrentHashMap<>();
     
     // ========== Allocataires ==========
     
@@ -125,6 +127,50 @@ public class AllocationStore {
                 .collect(Collectors.toList());
     }
     
+    // ========== Demandes ==========
+    
+    public void saveDemande(DemandeAllocation demande) {
+        demandes.put(demande.getId(), demande);
+    }
+    
+    public Optional<DemandeAllocation> findDemandeById(UUID id) {
+        return Optional.ofNullable(demandes.get(id));
+    }
+    
+    public List<DemandeAllocation> findDemandesByAllocataireId(UUID allocataireId) {
+        return demandes.values().stream()
+                .filter(d -> d.getAllocataireId().equals(allocataireId))
+                .collect(Collectors.toList());
+    }
+    
+    public List<DemandeAllocation> findPendingDemandes() {
+        return demandes.values().stream()
+                .filter(d -> "PENDING".equals(d.getStatus()))
+                .collect(Collectors.toList());
+    }
+    
+    // ========== Réclamations ==========
+    
+    public void saveReclamation(Reclamation reclamation) {
+        reclamations.put(reclamation.getId(), reclamation);
+    }
+    
+    public Optional<Reclamation> findReclamationById(UUID id) {
+        return Optional.ofNullable(reclamations.get(id));
+    }
+    
+    public List<Reclamation> findReclamationsByAllocataireId(UUID allocataireId) {
+        return reclamations.values().stream()
+                .filter(r -> r.getAllocataireId().equals(allocataireId))
+                .collect(Collectors.toList());
+    }
+    
+    public List<Reclamation> findPendingReclamations() {
+        return reclamations.values().stream()
+                .filter(r -> "PENDING".equals(r.getStatus()))
+                .collect(Collectors.toList());
+    }
+    
     // ========== Utilitaires ==========
     
     // vide tous les stores (pour les tests)
@@ -133,6 +179,8 @@ public class AllocationStore {
         allocations.clear();
         versements.clear();
         anomalies.clear();
+        demandes.clear();
+        reclamations.clear();
     }
     
     // compte le nombre total d'allocataires

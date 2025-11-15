@@ -1,9 +1,10 @@
 package cy.cav.client.controller;
 
-import cy.cav.client.domain.Allocataire;
 import cy.cav.client.dto.AllocataireDTO;
 import cy.cav.client.dto.AllocataireResponse;
-import cy.cav.client.store.AllocataireStore;
+import cy.cav.framework.*;
+import cy.cav.protocol.KnownActors;
+import cy.cav.protocol.accounts.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -18,10 +19,10 @@ import java.util.UUID;
 public class AccountController {
     private static final Logger log = LoggerFactory.getLogger(AccountController.class);
     
-    private final AllocataireStore store;
+    private final World world;
     
-    public AccountController(AllocataireStore store) {
-        this.store = store;
+    public AccountController(World world) {
+        this.world = world;
     }
     
     // Creates a new allocataire account (création d'un compte allocataire)
@@ -29,49 +30,77 @@ public class AccountController {
     public ResponseEntity<AllocataireResponse> createAccount(@RequestBody AllocataireDTO dto) {
         log.info("Création de compte pour: {} {}", dto.firstName(), dto.lastName());
         
-        // Create allocataire from DTO
-        Allocataire allocataire = new Allocataire(
-            dto.firstName(),
-            dto.lastName(),
-            dto.birthDate(),
-            dto.email(),
-            dto.inCouple(),
-            dto.numberOfDependents()
-        );
-        
-        allocataire.setPhoneNumber(dto.phoneNumber());
-        allocataire.setAddress(dto.address());
-        allocataire.setMonthlyIncome(dto.monthlyIncome());
-        allocataire.setIban(dto.iban());
-        
-        // Save to store
-        store.saveAllocataire(allocataire);
-        
-        log.info("Compte créé: {} (ID: {})", allocataire.getAllocataireNumber(), allocataire.getId());
-        
-        return ResponseEntity.status(HttpStatus.CREATED).body(
-            new AllocataireResponse(
-                allocataire.getId(),
-                allocataire.getAllocataireNumber(),
-                allocataire.getRegistrationDate(),
-                "ACTIF"
-            )
-        );
+        try {
+            // Create request message
+            CreateAccountRequest request = new CreateAccountRequest(
+                dto.firstName(),
+                dto.lastName(),
+                dto.birthDate(),
+                dto.email(),
+                dto.phoneNumber(),
+                dto.address(),
+                dto.inCouple(),
+                dto.numberOfDependents(),
+                dto.monthlyIncome(),
+                dto.iban()
+            );
+            
+            // Get proxy actor address
+            ActorAddress proxyAddress = getProxyAddress();
+            
+            // Send request to proxy (which forwards to service)
+            CreateAccountResponse response = world.querySync(proxyAddress, request);
+            
+            log.info("Compte créé: {} (ID: {})", response.allocataireNumber(), response.allocataireId());
+            
+            return ResponseEntity.status(HttpStatus.CREATED).body(
+                new AllocataireResponse(
+                    response.allocataireId(),
+                    response.allocataireNumber(),
+                    response.registrationDate(),
+                    response.status()
+                )
+            );
+            
+        } catch (Exception e) {
+            log.error("Erreur lors de la création du compte", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
     
     // Gets allocataire by ID (récupération d'un allocataire par ID)
     @GetMapping("/{id}")
     public ResponseEntity<AllocataireResponse> getAccount(@PathVariable UUID id) {
-        return store.findAllocataireById(id)
-            .map(allocataire -> ResponseEntity.ok(
+        try {
+            // Create request message
+            GetAccountRequest request = new GetAccountRequest(id);
+            
+            // Get proxy actor address
+            ActorAddress proxyAddress = getProxyAddress();
+            
+            // Send request to proxy (which forwards to service)
+            GetAccountResponse response = world.querySync(proxyAddress, request);
+            
+            return ResponseEntity.ok(
                 new AllocataireResponse(
-                    allocataire.getId(),
-                    allocataire.getAllocataireNumber(),
-                    allocataire.getRegistrationDate(),
-                    "ACTIF"
+                    response.allocataireId(),
+                    response.allocataireNumber(),
+                    response.registrationDate(),
+                    response.status()
                 )
-            ))
-            .orElse(ResponseEntity.notFound().build());
+            );
+            
+        } catch (Exception e) {
+            log.error("Erreur lors de la récupération du compte: {}", id, e);
+            return ResponseEntity.notFound().build();
+        }
+    }
+    
+    //Récupère l'adresse de l'acteur AllocataireProxy
+
+    private ActorAddress getProxyAddress() {
+        // The proxy is spawned in the client's world with GESTIONNAIRE_COMPTE ID
+        return world.server().address(KnownActors.GESTIONNAIRE_COMPTE);
     }
 }
 

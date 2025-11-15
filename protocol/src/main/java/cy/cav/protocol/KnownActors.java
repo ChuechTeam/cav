@@ -15,6 +15,8 @@ public final class KnownActors {
     
     // Gestionnaires
     // Managers
+    public static final Long GESTIONNAIRE_COMPTE = 100L;  // Account manager (allocataires)
+    public static final Long GESTIONNAIRE_DEMANDES = 105L;  // Demand manager
     public static final Long GESTIONNAIRE_VERSEMENTS = 110L;
     public static final Long DETECTEUR_ANOMALIES = 111L;
     public static final Long GESTIONNAIRE_RECLAMATIONS = 112L;

@@ -1,4 +1,4 @@
-package cy.cav.client.domain;
+package cy.cav.service.domain;
 
 import java.time.LocalDate;
 import java.util.UUID;
