@@ -1,5 +1,7 @@
 package cy.cav.framework;
 
+import java.time.*;
+import java.util.*;
 import java.util.concurrent.*;
 
 /// An Actor exists in a [World], receiving and sending messages through its lifetime.
@@ -22,6 +24,9 @@ public abstract class Actor {
     /// The state of this actor.
     private volatile ActorState state;
 
+    /// All timers that are still running. Can be modified from multiple threads.
+    private final Set<Timer> activeTimers = ConcurrentHashMap.newKeySet();
+
     /// Prepares the Actor to be added in a [World] by accepting a [ActorInit] object,
     /// giving us the actor's address and world.
     ///
@@ -43,6 +48,8 @@ public abstract class Actor {
     /// Called by [World] only.
     void reportDespawned() {
         state = ActorState.DEAD;
+        // Cancel all active timers.
+        activeTimers.forEach(Timer::cancelWithoutUnregistering);
         despawned();
     }
 
@@ -112,6 +119,33 @@ public abstract class Actor {
     /// @param body     the response message to send
     public final void respond(Envelope<?> envelope, Message.Response body) {
         world.respond(address, envelope, body);
+    }
+
+    /// Sends a message to an actor after a period of time.
+    ///
+    /// @param receiver the id of the actor to send the message to
+    /// @param body     the body of the message
+    /// @param delay    the delay before sending the message
+    ///
+    /// @throws IllegalStateException if the actor is not alive
+    ///
+    /// @return a [Timer] that can be canceled at any time
+    public final Timer sendDelayed(ActorAddress receiver, Message.Notification body, Duration delay) {
+        if (state != ActorState.ALIVE) {
+            throw new IllegalStateException("Can't send delayed message while not alive!");
+        }
+
+        Timer timer = new Timer(activeTimers::remove);
+        activeTimers.add(timer);
+
+        try {
+            world.sendDelayed(timer, address, receiver, body, delay);
+        } catch (Exception e) {
+            activeTimers.remove(timer);
+            throw e;
+        }
+
+        return timer;
     }
 
     /// Called when the actor receives an envelope.

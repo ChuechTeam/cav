@@ -3,6 +3,7 @@ package cy.cav.framework;
 import jakarta.annotation.*;
 import org.slf4j.*;
 import org.springframework.context.*;
+import org.springframework.scheduling.*;
 import org.springframework.scheduling.annotation.*;
 
 import java.time.*;
@@ -37,6 +38,7 @@ public class World implements SmartLifecycle {
 
     private final Server server;
     private final OutsideSender outsideSender;
+    private final TaskScheduler taskScheduler;
 
     private volatile boolean running = false;
     private volatile Thread mainLoopThread = null;
@@ -45,9 +47,10 @@ public class World implements SmartLifecycle {
     private final AtomicLong nextRequestId = new AtomicLong(1);
 
     /// Creates a new [World]. Called by [Framework].
-    World(Server server, OutsideSender outsideSender) {
+    World(Server server, OutsideSender outsideSender, TaskScheduler taskScheduler) {
         this.server = Objects.requireNonNull(server);
         this.outsideSender = Objects.requireNonNull(outsideSender);
+        this.taskScheduler = Objects.requireNonNull(taskScheduler);
     }
 
     /// Starts the message-processing loop in a new thread running in the background.
@@ -309,6 +312,15 @@ public class World implements SmartLifecycle {
         } catch (InterruptedException | ExecutionException e) {
             throw new RuntimeException("Query sync failed", e);
         }
+    }
+
+    /// Called by [Actor] to send a delayed message.
+    void sendDelayed(Timer timer, ActorAddress sender, ActorAddress receiver, Message.Notification body, Duration delay) {
+        timer.setFuture(taskScheduler.schedule(() -> {
+            // Remove the timer from the actor's list of active timers.'
+            timer.unregister();
+            send(sender, receiver, body);
+        }, Instant.now().plus(delay)));
     }
 
     /// Can only be called by [Actor]; it doesn't make sense to respond to requests outside an actor.

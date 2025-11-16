@@ -10,6 +10,7 @@ import org.springframework.cloud.netflix.eureka.*;
 import org.springframework.context.annotation.*;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.core.env.*;
+import org.springframework.scheduling.*;
 import org.springframework.scheduling.annotation.*;
 
 import java.security.*;
@@ -28,8 +29,8 @@ public class Framework {
     }
 
     @Bean
-    World world(Server server, OutsideSender outsideSender) {
-        return new World(server, outsideSender);
+    World world(Server server, OutsideSender outsideSender, TaskScheduler taskScheduler) {
+        return new World(server, outsideSender, taskScheduler);
     }
 
     // Allows users of the framework to put their own Server settings.
