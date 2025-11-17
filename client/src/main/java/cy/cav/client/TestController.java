@@ -3,6 +3,8 @@ package cy.cav.client;
 import cy.cav.framework.*;
 import cy.cav.protocol.*;
 import jakarta.annotation.*;
+
+import org.springframework.boot.autoconfigure.web.ErrorProperties.Whitelabel;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 
@@ -43,5 +45,24 @@ class TestController {
             return value;
         }
         return null;
+    }
+
+
+    // Test the  new OutsideSender feature with no reciever
+    @GetMapping("/outside")
+    ResponseEntity<?> outside() {
+        Server server = firstServer();
+        if (server == null) {
+            return ResponseEntity.notFound().build();
+        }
+        HelloRequest request;
+        ActorAddress actor = new ActorAddress(999,999); // Non existing actor
+        request = new HelloRequest  ("This message will never be delivered");
+
+        HelloResponse response = world.querySync(actor, request);
+
+        return ResponseEntity.ok(response);
+
+    
     }
 }
