@@ -165,7 +165,15 @@ public class World implements SmartLifecycle {
     /// @param creator the creator function
     /// @return the address of the created actor
     public ActorAddress spawn(Function<ActorInit, Actor> creator) {
-        return spawn(creator, 0);
+        return spawn(creator, 0, null);
+    }
+
+    public ActorAddress spawn(Function<ActorInit, Actor> creator, Function<Actor, Supervisor> supervisorCreator) {
+        return spawn(creator, 0, supervisorCreator);
+    }
+
+    public ActorAddress spawn(Function<ActorInit, Actor> creator, long specialNumber) {
+        return spawn(creator, specialNumber, null);
     }
 
     /// Spawns a new actor using the given creator function, using a custom or generated actor number.
@@ -193,7 +201,8 @@ public class World implements SmartLifecycle {
     /// @param creator       the creator function
     /// @param specialNumber the special actor number to use; 0 will generate a unique actor number
     /// @return the address of the created actor
-    public ActorAddress spawn(Function<ActorInit, Actor> creator, long specialNumber) {
+    public ActorAddress spawn(Function<ActorInit, Actor> creator, long specialNumber,
+                              @Nullable Function<Actor, Supervisor> supervisorCreator) {
         if (specialNumber < 0 || specialNumber >= SPECIAL_ACTOR_NUM_MAX) {
             throw new IllegalArgumentException("Invalid special number: " + specialNumber);
         }
@@ -212,7 +221,8 @@ public class World implements SmartLifecycle {
         if (existing != null) {
             throw new IllegalStateException("An actor with the same number already exists! " + actorNumber);
         }
-        actor.reportSpawned(); // todo: what if this throws an exception? + possible race condition
+        // todo: what if this throws an exception? + possible race condition
+        actor.reportSpawned(supervisorCreator != null ? supervisorCreator.apply(actor) : null);
 
         log.info("New actor of id {} spawned: {}", id, actor);
 

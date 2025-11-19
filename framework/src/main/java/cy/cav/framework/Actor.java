@@ -1,5 +1,7 @@
 package cy.cav.framework;
 
+import jakarta.annotation.*;
+
 import java.time.*;
 import java.util.*;
 import java.util.concurrent.*;
@@ -23,6 +25,8 @@ public abstract class Actor {
     protected final ActorAddress address;
     /// The state of this actor.
     private volatile ActorState state;
+    /// The supervisor bound to this actor.
+    private Supervisor supervisor;
 
     /// All timers that are still running. Can be modified from multiple threads.
     private final Set<Timer> activeTimers = ConcurrentHashMap.newKeySet();
@@ -37,10 +41,15 @@ public abstract class Actor {
         this.address = init.address();
         this.world = init.world();
         this.state = ActorState.DETACHED;
+        this.supervisor = new Supervisor.Default(this);
     }
 
     /// Called by [World] only.
-    void reportSpawned() {
+    void reportSpawned(@Nullable Supervisor supervisor) {
+        if (supervisor != null) {
+            this.supervisor = supervisor;
+        }
+
         state = ActorState.ALIVE;
         spawned();
     }
@@ -63,7 +72,7 @@ public abstract class Actor {
     ///
     /// Does nothing if the actor isn't [alive][ActorState#ALIVE].
     protected final void despawn() {
-        if (state == ActorState.ALIVE) {
+        if (state.active()) {
             world.despawn(address.actorNumber());
         }
     }
@@ -126,12 +135,10 @@ public abstract class Actor {
     /// @param receiver the id of the actor to send the message to
     /// @param body     the body of the message
     /// @param delay    the delay before sending the message
-    ///
-    /// @throws IllegalStateException if the actor is not alive
-    ///
     /// @return a [Timer] that can be canceled at any time
+    /// @throws IllegalStateException if the actor is not alive
     public final Timer sendDelayed(ActorAddress receiver, Message.Notification body, Duration delay) {
-        if (state != ActorState.ALIVE) {
+        if (!state.active()) {
             throw new IllegalStateException("Can't send delayed message while not alive!");
         }
 
@@ -167,16 +174,44 @@ public abstract class Actor {
     void acceptEnvelope(Envelope<?> envelope) {
         // Don't accept the message if we aren't alive. That sounds obvious but if this ever happens due to a bug
         // in World... We better be aware of it!
-        if (state != ActorState.ALIVE) {
-            throw new IllegalStateException("Can't accept envelope while not alive!");
+        switch (state) {
+            case ALIVE -> {
+                try {
+                    process(envelope);
+                } catch (Exception e) {
+                    Supervisor.HandleAction whatToDo = supervisor.handle(e, envelope);
+                    switch (whatToDo) {
+                        case ATTACH -> {
+                            state = ActorState.SUPERVISED;
+                            supervisor.attached();
+                        }
+                        case IGNORE -> { }
+                    }
+                }
+            }
+            case SUPERVISED -> {
+                Supervisor.ProcessAction whatToDo = supervisor.process(envelope);
+                switch (whatToDo) {
+                    case STAY_ATTACHED -> { }
+                    case DETACH -> {
+                        state = ActorState.ALIVE;
+                        supervisor.detached();
+                    }
+                }
+            }
+            case DETACHED -> throw new IllegalStateException("Can't accept envelope while detached!");
+            case DEAD -> throw new IllegalStateException("Can't accept envelope while dead!");
         }
-
-        process(envelope);
     }
 
     /// The current state of this actor.
     public ActorState state() {
         return state;
+    }
+
+    /// The address of this actor.
+    public ActorAddress address() {
+        return address;
     }
 }
 
