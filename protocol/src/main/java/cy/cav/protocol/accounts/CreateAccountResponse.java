@@ -6,12 +6,11 @@ import java.time.LocalDate;
 import java.util.UUID;
 
 /**
- * Response after creating an allocataire account.
- * Retourné par GestionnaireCompte après création d'un compte.
+ * Response after creating a beneficiary account.
  */
 public record CreateAccountResponse(
-    UUID allocataireId,
-    String allocataireNumber,
+    UUID beneficiaryId,
+    String beneficiaryNumber,
     LocalDate registrationDate,
     String status
 ) implements Message.Response {}

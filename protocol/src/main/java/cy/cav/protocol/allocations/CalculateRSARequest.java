@@ -9,10 +9,10 @@ import java.util.UUID;
  * Sent from client to RSACalculator (service).
  */
 public record CalculateRSARequest(
-    UUID allocataireId,        // ID de l'allocataire
-    double monthlyIncome,      // Revenus mensuels
-    int numberOfDependents,    // Nombre de personnes à charge
-    boolean inCouple,          // En couple ou célibataire
-    boolean hasHousing         // A un logement (pour forfait logement)
+    UUID beneficiaryId,        // ID of the beneficiary
+    double monthlyIncome,      // Monthly income
+    int numberOfDependents,    // Number of dependents
+    boolean inCouple,          // In couple or single
+    boolean hasHousing         // Has housing (for housing deduction)
 ) implements Message.Request<DecisionAllocationResponse> {}
 

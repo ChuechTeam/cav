@@ -3,8 +3,7 @@ package cy.cav.protocol.accounts;
 import cy.cav.framework.Message;
 
 /**
- * Response indicating if an allocataire account exists.
- * Retourné par GestionnaireCompte indiquant si le compte existe.
+ * Response indicating if a beneficiary account exists.
  */
 public record CheckAccountExistsResponse(
     boolean exists

@@ -3,11 +3,11 @@ package cy.cav.service.domain;
 import java.time.LocalDate;
 import java.util.UUID;
 
-// Represents an active allocation (en cours de versement)
+// Represents an active allowance (currently being paid)
 
 public class AllocationActive {
     private UUID id;
-    private UUID allocataireId;           // Référence à l'allocataire
+    private UUID beneficiaryId;           // Reference to beneficiary
     private AllocationType type;           // Type d'allocation (RSA, ARE, etc.)
     private AllocationStatus status;      // Statut (ACTIVE, SUSPENDED, TERMINATED)
     private double monthlyAmount;         // Montant mensuel
@@ -15,22 +15,22 @@ public class AllocationActive {
     private LocalDate endDate;            // Date de fin (null si indéterminée)
     private LocalDate lastPaymentDate;    // Date du dernier versement
     
-    // Constructeur par défaut
+    // Default constructor
     public AllocationActive() {
         this.id = UUID.randomUUID();
         this.status = AllocationStatus.ACTIVE;
     }
     
-    // Constructeur avec paramètres essentiels
-    public AllocationActive(UUID allocataireId, AllocationType type, double monthlyAmount) {
+    // Constructor with essential parameters
+    public AllocationActive(UUID beneficiaryId, AllocationType type, double monthlyAmount) {
         this();
-        this.allocataireId = allocataireId;
+        this.beneficiaryId = beneficiaryId;
         this.type = type;
         this.monthlyAmount = monthlyAmount;
         this.startDate = LocalDate.now();
     }
     
-    // Getters et Setters
+    // Getters and Setters
     public UUID getId() {
         return id;
     }
@@ -39,12 +39,12 @@ public class AllocationActive {
         this.id = id;
     }
     
-    public UUID getAllocataireId() {
-        return allocataireId;
+    public UUID getBeneficiaryId() {
+        return beneficiaryId;
     }
     
-    public void setAllocataireId(UUID allocataireId) {
-        this.allocataireId = allocataireId;
+    public void setBeneficiaryId(UUID beneficiaryId) {
+        this.beneficiaryId = beneficiaryId;
     }
     
     public AllocationType getType() {

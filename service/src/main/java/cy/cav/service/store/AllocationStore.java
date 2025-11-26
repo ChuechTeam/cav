@@ -13,29 +13,29 @@ import java.util.stream.Collectors;
  */
 @Component
 public class AllocationStore {
-    // Stores pour les différentes entités
-    private final Map<UUID, Allocataire> allocataires = new ConcurrentHashMap<>();
+    // Stores for different entities
+    private final Map<UUID, Beneficiary> beneficiaries = new ConcurrentHashMap<>();
     private final Map<UUID, AllocationActive> allocations = new ConcurrentHashMap<>();
-    private final Map<UUID, Versement> versements = new ConcurrentHashMap<>();
-    private final Map<UUID, Anomalie> anomalies = new ConcurrentHashMap<>();
-    private final Map<UUID, DemandeAllocation> demandes = new ConcurrentHashMap<>();
-    private final Map<UUID, Reclamation> reclamations = new ConcurrentHashMap<>();
+    private final Map<UUID, Payment> payments = new ConcurrentHashMap<>();
+    private final Map<UUID, Anomaly> anomalies = new ConcurrentHashMap<>();
+    private final Map<UUID, AllowanceRequest> requests = new ConcurrentHashMap<>();
+    private final Map<UUID, Claim> claims = new ConcurrentHashMap<>();
     
-    // ========== Allocataires ==========
+    // ========== Beneficiaries ==========
     
-    // Sauvegarde un allocataire
-    public void saveAllocataire(Allocataire allocataire) {
-        allocataires.put(allocataire.getId(), allocataire);
+    // Save a beneficiary
+    public void saveBeneficiary(Beneficiary beneficiary) {
+        beneficiaries.put(beneficiary.getId(), beneficiary);
     }
     
-    // Recup allocataire par son ID
-    public Optional<Allocataire> findAllocataireById(UUID id) {
-        return Optional.ofNullable(allocataires.get(id));
+    // Get beneficiary by ID
+    public Optional<Beneficiary> findBeneficiaryById(UUID id) {
+        return Optional.ofNullable(beneficiaries.get(id));
     }
     
-    // Recup tous les allocataires
-    public List<Allocataire> findAllAllocataires() {
-        return new ArrayList<>(allocataires.values());
+    // Get all beneficiaries
+    public List<Beneficiary> findAllBeneficiaries() {
+        return new ArrayList<>(beneficiaries.values());
     }
     
     // ========== Allocations ==========
@@ -51,10 +51,10 @@ public class AllocationStore {
         return Optional.ofNullable(allocations.get(id));
     }
     
-    // Recup toutes les allocations actives d'un allocataire spécifique
-    public List<AllocationActive> findAllocationsByAllocataireId(UUID allocataireId) {
+    // Get all active allocations for a specific beneficiary
+    public List<AllocationActive> findAllocationsByBeneficiaryId(UUID beneficiaryId) {
         return allocations.values().stream()
-                .filter(a -> a.getAllocataireId().equals(allocataireId))
+                .filter(a -> a.getBeneficiaryId().equals(beneficiaryId))
                 .filter(a -> a.getStatus() == AllocationStatus.ACTIVE)
                 .collect(Collectors.toList());
     }
@@ -66,126 +66,120 @@ public class AllocationStore {
                 .collect(Collectors.toList());
     }
     
-    // ========== Versements ==========
+    // ========== Payments ==========
     
-    
-    public void saveVersement(Versement versement) {
-        versements.put(versement.getId(), versement);
+    public void savePayment(Payment payment) {
+        payments.put(payment.getId(), payment);
     }
-    
 
-    public Optional<Versement> findVersementById(UUID id) {
-        return Optional.ofNullable(versements.get(id));
+    public Optional<Payment> findPaymentById(UUID id) {
+        return Optional.ofNullable(payments.get(id));
     }
-    
 
-    public List<Versement> findVersementsByAllocationId(UUID allocationId) {
-        return versements.values().stream()
-                .filter(v -> v.getAllocationId().equals(allocationId))
+    public List<Payment> findPaymentsByAllocationId(UUID allocationId) {
+        return payments.values().stream()
+                .filter(p -> p.getAllowanceId().equals(allocationId))
                 .collect(Collectors.toList());
     }
     
-    // Recup tous les versements effectués (COMPLETED) d'une allocation spécifique
-    public List<Versement> findCompletedVersementsByAllocationId(UUID allocationId) {
-        return versements.values().stream()
-                .filter(v -> v.getAllocationId().equals(allocationId))
-                .filter(v -> v.getStatus() == PaymentStatus.COMPLETED)
+    // Get all completed payments for a specific allocation
+    public List<Payment> findCompletedPaymentsByAllocationId(UUID allocationId) {
+        return payments.values().stream()
+                .filter(p -> p.getAllowanceId().equals(allocationId))
+                .filter(p -> p.getStatus() == PaymentStatus.COMPLETED)
                 .collect(Collectors.toList());
     }
     
-    // tous les versements d'un allocataire spécifique
-    public List<Versement> findVersementsByAllocataireId(UUID allocataireId) {
-        return versements.values().stream()
-                .filter(v -> v.getAllocataireId().equals(allocataireId))
+    // All payments for a specific beneficiary
+    public List<Payment> findPaymentsByBeneficiaryId(UUID beneficiaryId) {
+        return payments.values().stream()
+                .filter(p -> p.getBeneficiaryId().equals(beneficiaryId))
                 .collect(Collectors.toList());
     }
     
     // ========== Anomalies ==========
     
-    // crée une anomalie
-    public void saveAnomalie(Anomalie anomalie) {
-        anomalies.put(anomalie.getId(), anomalie);
+    // Create an anomaly
+    public void saveAnomaly(Anomaly anomaly) {
+        anomalies.put(anomaly.getId(), anomaly);
     }
-    
 
-    public Optional<Anomalie> findAnomalieById(UUID id) {
+    public Optional<Anomaly> findAnomalyById(UUID id) {
         return Optional.ofNullable(anomalies.get(id));
     }
     
-
-    // toutes les anomalies non résolues
-    public List<Anomalie> findUnresolvedAnomalies() {
+    // All unresolved anomalies
+    public List<Anomaly> findUnresolvedAnomalies() {
         return anomalies.values().stream()
                 .filter(a -> !a.isResolved())
                 .collect(Collectors.toList());
     }
     
-    
-    public List<Anomalie> findAnomaliesByAllocataireId(UUID allocataireId) {
+    public List<Anomaly> findAnomaliesByBeneficiaryId(UUID beneficiaryId) {
         return anomalies.values().stream()
-                .filter(a -> a.getAllocataireId().equals(allocataireId))
+                .filter(a -> a.getBeneficiaryId().equals(beneficiaryId))
                 .collect(Collectors.toList());
     }
     
-    // ========== Demandes ==========
+    // ========== Allowance Requests ==========
     
-    public void saveDemande(DemandeAllocation demande) {
-        demandes.put(demande.getId(), demande);
+    public void saveRequest(AllowanceRequest request) {
+        requests.put(request.getId(), request);
     }
     
-    public Optional<DemandeAllocation> findDemandeById(UUID id) {
-        return Optional.ofNullable(demandes.get(id));
+    public Optional<AllowanceRequest> findRequestById(UUID id) {
+        return Optional.ofNullable(requests.get(id));
     }
     
-    public List<DemandeAllocation> findDemandesByAllocataireId(UUID allocataireId) {
-        return demandes.values().stream()
-                .filter(d -> d.getAllocataireId().equals(allocataireId))
+    public List<AllowanceRequest> findRequestsByBeneficiaryId(UUID beneficiaryId) {
+        return requests.values().stream()
+                .filter(r -> r.getBeneficiaryId().equals(beneficiaryId))
                 .collect(Collectors.toList());
     }
     
-    public List<DemandeAllocation> findPendingDemandes() {
-        return demandes.values().stream()
-                .filter(d -> "PENDING".equals(d.getStatus()))
-                .collect(Collectors.toList());
-    }
-    
-    // ========== Réclamations ==========
-    
-    public void saveReclamation(Reclamation reclamation) {
-        reclamations.put(reclamation.getId(), reclamation);
-    }
-    
-    public Optional<Reclamation> findReclamationById(UUID id) {
-        return Optional.ofNullable(reclamations.get(id));
-    }
-    
-    public List<Reclamation> findReclamationsByAllocataireId(UUID allocataireId) {
-        return reclamations.values().stream()
-                .filter(r -> r.getAllocataireId().equals(allocataireId))
-                .collect(Collectors.toList());
-    }
-    
-    public List<Reclamation> findPendingReclamations() {
-        return reclamations.values().stream()
+    public List<AllowanceRequest> findPendingRequests() {
+        return requests.values().stream()
                 .filter(r -> "PENDING".equals(r.getStatus()))
                 .collect(Collectors.toList());
     }
     
-    // ========== Utilitaires ==========
+    // ========== Claims ==========
     
-    // vide tous les stores (pour les tests)
-    public void clearAll() {
-        allocataires.clear();
-        allocations.clear();
-        versements.clear();
-        anomalies.clear();
-        demandes.clear();
-        reclamations.clear();
+    public void saveClaim(Claim claim) {
+        claims.put(claim.getId(), claim);
     }
     
-    // compte le nombre total d'allocataires
-    public int countAllocataires() {
-        return allocataires.size();
+    public Optional<Claim> findClaimById(UUID id) {
+        return Optional.ofNullable(claims.get(id));
+    }
+    
+    public List<Claim> findClaimsByBeneficiaryId(UUID beneficiaryId) {
+        return claims.values().stream()
+                .filter(c -> c.getBeneficiaryId().equals(beneficiaryId))
+                .collect(Collectors.toList());
+    }
+    
+    public List<Claim> findPendingClaims() {
+        return claims.values().stream()
+                .filter(c -> "PENDING".equals(c.getStatus()))
+                .collect(Collectors.toList());
+    }
+    
+    // ========== Utilities ==========
+    
+    // Clear all stores (for tests)
+    public void clearAll() {
+        beneficiaries.clear();
+        allocations.clear();
+        payments.clear();
+        anomalies.clear();
+        requests.clear();
+        claims.clear();
+    }
+    
+    // Count total number of beneficiaries
+    public int countBeneficiaries() {
+        return beneficiaries.size();
     }
     
     // nb d'allocations actives

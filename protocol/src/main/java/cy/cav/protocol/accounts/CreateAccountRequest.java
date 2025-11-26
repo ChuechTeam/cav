@@ -5,10 +5,8 @@ import cy.cav.framework.Message;
 import java.time.LocalDate;
 
 /**
- * Request to create a new allocataire account.
- * Sent from client to GestionnaireCompte (service).
- * 
- * Demande de création d'un compte allocataire.
+ * Request to create a new beneficiary account.
+
  */
 public record CreateAccountRequest(
     String firstName,

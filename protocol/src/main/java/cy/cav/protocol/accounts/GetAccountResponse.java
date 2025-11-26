@@ -6,12 +6,11 @@ import java.time.LocalDate;
 import java.util.UUID;
 
 /**
- * Response with allocataire account information.
- * Retourné par GestionnaireCompte avec les informations du compte.
+ * Response with beneficiary account information.
  */
 public record GetAccountResponse(
-    UUID allocataireId,
-    String allocataireNumber,
+    UUID beneficiaryId,
+    String beneficiaryNumber,
     String firstName,
     String lastName,
     LocalDate birthDate,

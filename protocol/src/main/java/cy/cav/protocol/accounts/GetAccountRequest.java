@@ -5,12 +5,9 @@ import cy.cav.framework.Message;
 import java.util.UUID;
 
 /**
- * Request to get an allocataire account by ID.
- * Sent from client to GestionnaireCompte (service).
- * 
- * Demande de récupération d'un compte allocataire par ID.
+ * Request to get a beneficiary account by ID.
  */
 public record GetAccountRequest(
-    UUID allocataireId
+    UUID beneficiaryId
 ) implements Message.Request<GetAccountResponse> {}
 

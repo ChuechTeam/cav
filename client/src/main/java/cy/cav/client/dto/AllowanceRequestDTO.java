@@ -2,9 +2,9 @@ package cy.cav.client.dto;
 
 import java.util.UUID;
 
-// DTO for RSA allocation request (demande d'allocation RSA)
-public record DemandeRSADTO(
-    UUID allocataireId,
+// DTO for creating an allowance request (RSA)
+public record AllowanceRequestDTO(
+    UUID beneficiaryId,
     double monthlyIncome,
     int numberOfDependents,
     boolean inCouple,

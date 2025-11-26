@@ -4,35 +4,34 @@ import java.time.LocalDate;
 import java.util.UUID;
 
 /**
- * Représente une réclamation d'un allocataire.
- * Represents a claim from an allocataire.
+ * Represents a claim from a beneficiary.
  */
-public class Reclamation {
+public class Claim {
     private UUID id;
-    private UUID allocataireId;           // Référence à l'allocataire
-    private UUID allocationId;             // Référence à l'allocation concernée (optionnel)
-    private String type;                   // Type: CALCULATION_ERROR, MISSING_PAYMENT, OVERPAYMENT, OTHER
-    private String description;            // Description de la réclamation
-    private LocalDate claimDate;           // Date de la réclamation
-    private String status;                 // Statut: PENDING, IN_PROGRESS, RESOLVED, REJECTED
-    private String resolution;             // Résolution (si résolue)
+    private UUID beneficiaryId;           // Reference to beneficiary
+    private UUID allowanceId;             // Reference to concerned allowance (optional)
+    private String type;                  // Type: CALCULATION_ERROR, MISSING_PAYMENT, OVERPAYMENT, OTHER
+    private String description;           // Claim description
+    private LocalDate claimDate;          // Claim date
+    private String status;                // Status: PENDING, IN_PROGRESS, RESOLVED, REJECTED
+    private String resolution;            // Resolution (if resolved)
     
-    // Constructeur par défaut
-    public Reclamation() {
+    // Default constructor
+    public Claim() {
         this.id = UUID.randomUUID();
         this.claimDate = LocalDate.now();
         this.status = "PENDING";
     }
     
-    // Constructeur avec paramètres essentiels
-    public Reclamation(UUID allocataireId, String type, String description) {
+    // Constructor with essential parameters
+    public Claim(UUID beneficiaryId, String type, String description) {
         this();
-        this.allocataireId = allocataireId;
+        this.beneficiaryId = beneficiaryId;
         this.type = type;
         this.description = description;
     }
     
-    // Getters et Setters
+    // Getters and Setters
     public UUID getId() {
         return id;
     }
@@ -41,20 +40,20 @@ public class Reclamation {
         this.id = id;
     }
     
-    public UUID getAllocataireId() {
-        return allocataireId;
+    public UUID getBeneficiaryId() {
+        return beneficiaryId;
     }
     
-    public void setAllocataireId(UUID allocataireId) {
-        this.allocataireId = allocataireId;
+    public void setBeneficiaryId(UUID beneficiaryId) {
+        this.beneficiaryId = beneficiaryId;
     }
     
-    public UUID getAllocationId() {
-        return allocationId;
+    public UUID getAllowanceId() {
+        return allowanceId;
     }
     
-    public void setAllocationId(UUID allocationId) {
-        this.allocationId = allocationId;
+    public void setAllowanceId(UUID allowanceId) {
+        this.allowanceId = allowanceId;
     }
     
     public String getType() {

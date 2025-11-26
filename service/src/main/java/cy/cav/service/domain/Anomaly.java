@@ -4,32 +4,32 @@ import java.time.LocalDate;
 import java.util.UUID;
 
 /**
- * Represents a detected anomaly (trop perçu, moins perçu, erreur de calcul)
+ * Represents a detected anomaly (overpayment, underpayment, calculation error)
  */
-public class Anomalie {
+public class Anomaly {
     private UUID id;
-    private UUID allocationId;            // Référence à l'allocation concernée
-    private UUID allocataireId;           // Référence à l'allocataire
-    private AnomalyType type;             // Trop perçu, moins perçu, erreur de calcul
-    private double expectedAmount;        // Montant attendu 
-    private double actualAmount;          // Montant réellement versé 
-    private double difference;            // Différence
-    private LocalDate detectionDate;      // Date de détection
-    private boolean resolved;             // Anomalie résolue ou non
+    private UUID allowanceId;            // Reference to concerned allowance
+    private UUID beneficiaryId;           // Reference to beneficiary
+    private AnomalyType type;             // Overpayment, underpayment, calculation error
+    private double expectedAmount;        // Expected amount 
+    private double actualAmount;           // Actually paid amount 
+    private double difference;            // Difference
+    private LocalDate detectionDate;      // Detection date
+    private boolean resolved;             // Anomaly resolved or not
     
-    // Constructeur par défaut
-    public Anomalie() {
+    // Default constructor
+    public Anomaly() {
         this.id = UUID.randomUUID();
         this.detectionDate = LocalDate.now();
         this.resolved = false;
     }
     
-    // Constructeur avec paramètres essentiels
-    public Anomalie(UUID allocationId, UUID allocataireId, AnomalyType type,
+    // Constructor with essential parameters
+    public Anomaly(UUID allowanceId, UUID beneficiaryId, AnomalyType type,
                    double expectedAmount, double actualAmount) {
         this();
-        this.allocationId = allocationId;
-        this.allocataireId = allocataireId;
+        this.allowanceId = allowanceId;
+        this.beneficiaryId = beneficiaryId;
         this.type = type;
         this.expectedAmount = expectedAmount;
         this.actualAmount = actualAmount;
@@ -37,7 +37,7 @@ public class Anomalie {
     }
     
     
-    // Getters et Setters
+    // Getters and Setters
     public UUID getId() {
         return id;
     }
@@ -46,20 +46,20 @@ public class Anomalie {
         this.id = id;
     }
     
-    public UUID getAllocationId() {
-        return allocationId;
+    public UUID getAllowanceId() {
+        return allowanceId;
     }
     
-    public void setAllocationId(UUID allocationId) {
-        this.allocationId = allocationId;
+    public void setAllowanceId(UUID allowanceId) {
+        this.allowanceId = allowanceId;
     }
     
-    public UUID getAllocataireId() {
-        return allocataireId;
+    public UUID getBeneficiaryId() {
+        return beneficiaryId;
     }
     
-    public void setAllocataireId(UUID allocataireId) {
-        this.allocataireId = allocataireId;
+    public void setBeneficiaryId(UUID beneficiaryId) {
+        this.beneficiaryId = beneficiaryId;
     }
     
     public AnomalyType getType() {

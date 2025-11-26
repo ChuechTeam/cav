@@ -2,8 +2,8 @@ package cy.cav.service;
 
 import cy.cav.framework.*;
 import cy.cav.protocol.*;
-import cy.cav.service.actors.GestionnaireCompte;
-import cy.cav.service.actors.GestionnaireDemandes;
+import cy.cav.service.actors.Beneficiary;
+import cy.cav.service.actors.AllowanceRequest;
 import cy.cav.service.actors.calculateurs.RSACalculator;
 import cy.cav.service.store.AllocationStore;
 import org.springframework.boot.*;
@@ -30,14 +30,14 @@ public class CavApplication implements ApplicationListener<ApplicationStartedEve
         // Create a new greeter with a special id
         world.spawn(Greeter::new, KnownActors.GREETER);
         
-        // Spawn account manager actor (gestionnaire de comptes allocataires)
-        world.spawn(init -> new GestionnaireCompte(init, store), KnownActors.GESTIONNAIRE_COMPTE);
+        // Spawn beneficiary actor (manages beneficiary accounts)
+        world.spawn(init -> new Beneficiary(init, store), KnownActors.BENEFICIARY);
         
-        // Spawn demand manager actor (gestionnaire de demandes)
-        world.spawn(init -> new GestionnaireDemandes(init, store), KnownActors.GESTIONNAIRE_DEMANDES);
+        // Spawn allowance request actor (manages allowance requests)
+        world.spawn(init -> new AllowanceRequest(init, store), KnownActors.ALLOWANCE_REQUEST);
         
-        // Spawn RSA calculator actor (création de l'acteur calculateur RSA)
-        world.spawn(init -> new RSACalculator(init, store), KnownActors.CALCULATEUR_RSA);
+        // Spawn RSA calculator actor
+        world.spawn(init -> new RSACalculator(init, store), KnownActors.RSA_CALCULATOR);
     }
 }
 

@@ -3,11 +3,11 @@ package cy.cav.client.dto;
 import java.time.LocalDate;
 import java.util.UUID;
 
-// Response after allocation request (réponse après demande d'allocation)
-public record DemandeResponse(
-    UUID demandeId,
+// Response after allowance request
+public record AllowanceRequestResponse(
+    UUID requestId,
     String status,
-    UUID allocationId,
+    UUID allowanceId,
     Double monthlyAmount,
     String rejectionReason,
     LocalDate requestDate

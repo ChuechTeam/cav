@@ -40,11 +40,11 @@ public class RSACalculator extends Actor {
     
     // Processes RSA calculation request (traite une demande de calcul RSA)
     DecisionAllocationResponse calculateRSA(CalculateRSARequest request) {
-        log.info("Calcul RSA demandé pour allocataire: {}", request.allocataireId());
+        log.info("RSA calculation requested for beneficiary: {}", request.beneficiaryId());
         
-        // Always register allocataire in service store for tracking (toujours enregistrer pour suivi)
-        // Even if request is rejected, we keep track for future claims (même si refusé, on garde la trace)
-        ensureAllocataireExists(request);
+        // Always register beneficiary in service store for tracking
+        // Even if request is rejected, we keep track for future claims
+        ensureBeneficiaryExists(request);
         
         // Check eligibility using request data (vérification d'éligibilité simplifiée)
         boolean eligible = checkEligibility(request);
@@ -62,17 +62,17 @@ public class RSACalculator extends Actor {
             // Round to nearest 10€ (arrondi à 10€ près)
             roundedAmount = Math.round(finalAmount / 10.0) * 10.0;
             
-            log.info("Montant RSA calculé: {}€ (arrondi: {}€) pour allocataire: {}", 
-                calculatedAmount, roundedAmount, request.allocataireId());
+            log.info("RSA amount calculated: {}€ (rounded: {}€) for beneficiary: {}", 
+                calculatedAmount, roundedAmount, request.beneficiaryId());
         } else {
-            rejectionReason = "Conditions d'éligibilité non remplies";
-            log.info("Demande RSA refusée pour allocataire: {} - {}", request.allocataireId(), rejectionReason);
+            rejectionReason = "Eligibility conditions not met";
+            log.info("RSA request rejected for beneficiary: {} - {}", request.beneficiaryId(), rejectionReason);
         }
         
-        // Always create allocation for tracking (toujours créer allocation pour suivi)
-        // Even if rejected, we keep it for future claims (même refusée, on garde pour réclamations)
+        // Always create allocation for tracking
+        // Even if rejected, we keep it for future claims
         AllocationActive allocation = new AllocationActive(
-            request.allocataireId(),
+            request.beneficiaryId(),
             AllocationType.RSA,
             roundedAmount
         );
@@ -86,8 +86,8 @@ public class RSACalculator extends Actor {
         // Save to store (always, even if rejected)
         store.saveAllocation(allocation);
         
-        log.info("Allocation RSA créée (statut: {}): {} pour allocataire: {}", 
-            allocation.getStatus(), allocation.getId(), request.allocataireId());
+        log.info("RSA allocation created (status: {}): {} for beneficiary: {}", 
+            allocation.getStatus(), allocation.getId(), request.beneficiaryId());
         
         return new DecisionAllocationResponse(
             eligible && roundedAmount > 0,
@@ -98,19 +98,19 @@ public class RSACalculator extends Actor {
         );
     }
     
-    // Ensures allocataire exists in service store for tracking (assure le suivi côté service)
-    private void ensureAllocataireExists(CalculateRSARequest request) {
-        if (!store.findAllocataireById(request.allocataireId()).isPresent()) {
-            // Create minimal allocataire for tracking (création minimale pour suivi)
+    // Ensures beneficiary exists in service store for tracking
+    private void ensureBeneficiaryExists(CalculateRSARequest request) {
+        if (!store.findBeneficiaryById(request.beneficiaryId()).isPresent()) {
+            // Create minimal beneficiary for tracking
             // We don't have all fields, but we track the ID and basic info from request
-            Allocataire allocataire = new Allocataire();
-            allocataire.setId(request.allocataireId());
-            allocataire.setInCouple(request.inCouple());
-            allocataire.setNumberOfDependents(request.numberOfDependents());
-            allocataire.setMonthlyIncome(request.monthlyIncome());
+            cy.cav.service.domain.Beneficiary beneficiary = new cy.cav.service.domain.Beneficiary();
+            beneficiary.setId(request.beneficiaryId());
+            beneficiary.setInCouple(request.inCouple());
+            beneficiary.setNumberOfDependents(request.numberOfDependents());
+            beneficiary.setMonthlyIncome(request.monthlyIncome());
             
-            store.saveAllocataire(allocataire);
-            log.debug("Allocataire enregistré côté service pour suivi: {}", request.allocataireId());
+            store.saveBeneficiary(beneficiary);
+            log.debug("Beneficiary registered in service for tracking: {}", request.beneficiaryId());
         }
     }
     

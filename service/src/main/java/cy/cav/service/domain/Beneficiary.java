@@ -3,9 +3,10 @@ package cy.cav.service.domain;
 import java.time.LocalDate;
 import java.util.UUID;
 
-// Represents an allocataire (bénéficiaire d'allocations)
-
-public class Allocataire {
+/**
+ * Represents a beneficiary (allocataire) of allowances.
+ */
+public class Beneficiary {
     private UUID id;
     private String firstName;
     private String lastName;
@@ -13,20 +14,20 @@ public class Allocataire {
     private String email;
     private String phoneNumber;
     private String address;
-    private boolean inCouple;              // En couple ou célibataire
-    private int numberOfDependents;        // Nombre de personnes à charge (simplifié)
-    private double monthlyIncome;           // Revenus mensuels
-    private String iban;                   // IBAN pour les versements
-    private String allocataireNumber;      // Numéro d'allocataire (généré automatiquement)
-    private LocalDate registrationDate;     // Date d'inscription
+    private boolean inCouple;              // In couple or single
+    private int numberOfDependents;        // Number of dependents
+    private double monthlyIncome;           // Monthly income
+    private String iban;                   // IBAN for payments
+    private String beneficiaryNumber;      // Beneficiary number (auto-generated)
+    private LocalDate registrationDate;   // Registration date
     
-    // Constructeur par défaut
-    public Allocataire() {
+    // Default constructor
+    public Beneficiary() {
         this.id = UUID.randomUUID();
     }
     
-    // Constructeur avec paramètres essentiels
-    public Allocataire(String firstName, String lastName, LocalDate birthDate, 
+    // Constructor with essential parameters
+    public Beneficiary(String firstName, String lastName, LocalDate birthDate, 
                       String email, boolean inCouple, int numberOfDependents) {
         this();
         this.firstName = firstName;
@@ -38,7 +39,7 @@ public class Allocataire {
         this.monthlyIncome = 0.0;
     }
     
-    // Getters et Setters
+    // Getters and Setters
     public UUID getId() {
         return id;
     }
@@ -127,12 +128,12 @@ public class Allocataire {
         this.iban = iban;
     }
     
-    public String getAllocataireNumber() {
-        return allocataireNumber;
+    public String getBeneficiaryNumber() {
+        return beneficiaryNumber;
     }
     
-    public void setAllocataireNumber(String allocataireNumber) {
-        this.allocataireNumber = allocataireNumber;
+    public void setBeneficiaryNumber(String beneficiaryNumber) {
+        this.beneficiaryNumber = beneficiaryNumber;
     }
     
     public LocalDate getRegistrationDate() {
@@ -144,7 +145,6 @@ public class Allocataire {
     }
     
     /**
-     * Calcule le nombre total de personnes dans le foyer.
      * Calculates total number of people in household.
      */
     public int getHouseholdSize() {

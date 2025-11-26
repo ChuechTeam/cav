@@ -1,6 +1,6 @@
 package cy.cav.service.config;
 
-import cy.cav.service.domain.Allocataire;
+import cy.cav.service.domain.Beneficiary;
 import cy.cav.service.store.AllocationStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,19 +26,19 @@ public class DataInitializer implements ApplicationListener<ApplicationStartedEv
     @Override
     public void onApplicationEvent(@NonNull ApplicationStartedEvent event) {
         // create data only if store is empty
-        if (store.countAllocataires() == 0) {
-            log.info("Initialisation des données de test...");
+        if (store.countBeneficiaries() == 0) {
+            log.info("Initializing test data...");
             createTestData();
-            log.info("Données de test créées: {} allocataires", store.countAllocataires());
+            log.info("Test data created: {} beneficiaries", store.countBeneficiaries());
         } else {
-            log.info("Données déjà présentes: {} allocataires", store.countAllocataires());
+            log.info("Data already present: {} beneficiaries", store.countBeneficiaries());
         }
     }
     
-    // Allocataires for testing
+    // Beneficiaries for testing
     private void createTestData() {
-        // Allocataire 1: Personne seule, sans revenus
-        Allocataire alloc1 = new Allocataire(
+        // Beneficiary 1: Single person, no income
+        Beneficiary beneficiary1 = new Beneficiary(
             "Jean",
             "Dupont",
             LocalDate.of(1990, 5, 15),
@@ -46,14 +46,14 @@ public class DataInitializer implements ApplicationListener<ApplicationStartedEv
             false,  // Célibataire
             0       // Pas de personnes à charge
         );
-        alloc1.setPhoneNumber("0612345678");
-        alloc1.setAddress("12 Rue de la Paix, 75001 Paris");
-        alloc1.setMonthlyIncome(0.0);
-        alloc1.setIban("FR7612345678901234567890123");
-        store.saveAllocataire(alloc1);
+        beneficiary1.setPhoneNumber("0612345678");
+        beneficiary1.setAddress("12 Rue de la Paix, 75001 Paris");
+        beneficiary1.setMonthlyIncome(0.0);
+        beneficiary1.setIban("FR7612345678901234567890123");
+        store.saveBeneficiary(beneficiary1);
         
-        // Allocataire 2: En couple avec 2 enfants
-        Allocataire alloc2 = new Allocataire(
+        // Beneficiary 2: In couple with 2 children
+        Beneficiary beneficiary2 = new Beneficiary(
             "Marie",
             "Martin",
             LocalDate.of(1985, 8, 20),
@@ -61,14 +61,14 @@ public class DataInitializer implements ApplicationListener<ApplicationStartedEv
             true,   // En couple
             2       // 2 personnes à charge
         );
-        alloc2.setPhoneNumber("0698765432");
-        alloc2.setAddress("45 Avenue des Champs, 69001 Lyon");
-        alloc2.setMonthlyIncome(500.0);  // Revenus modestes
-        alloc2.setIban("FR7698765432109876543210987");
-        store.saveAllocataire(alloc2);
+        beneficiary2.setPhoneNumber("0698765432");
+        beneficiary2.setAddress("45 Avenue des Champs, 69001 Lyon");
+        beneficiary2.setMonthlyIncome(500.0);  // Modest income
+        beneficiary2.setIban("FR7698765432109876543210987");
+        store.saveBeneficiary(beneficiary2);
         
-        // Allocataire 3: Personne seule avec 1 enfant
-        Allocataire alloc3 = new Allocataire(
+        // Beneficiary 3: Single person with 1 child
+        Beneficiary beneficiary3 = new Beneficiary(
             "Pierre",
             "Bernard",
             LocalDate.of(1992, 3, 10),
@@ -76,16 +76,16 @@ public class DataInitializer implements ApplicationListener<ApplicationStartedEv
             false,  // Célibataire
             1       // 1 personne à charge
         );
-        alloc3.setPhoneNumber("0654321098");
-        alloc3.setAddress("78 Boulevard Saint-Michel, 33000 Bordeaux");
-        alloc3.setMonthlyIncome(800.0);
-        alloc3.setIban("FR7654321098765432109876543");
-        store.saveAllocataire(alloc3);
+        beneficiary3.setPhoneNumber("0654321098");
+        beneficiary3.setAddress("78 Boulevard Saint-Michel, 33000 Bordeaux");
+        beneficiary3.setMonthlyIncome(800.0);
+        beneficiary3.setIban("FR7654321098765432109876543");
+        store.saveBeneficiary(beneficiary3);
         
-        log.debug("Allocataires de test créés:");
-        log.debug("  - {} {} (ID: {})", alloc1.getFirstName(), alloc1.getLastName(), alloc1.getId());
-        log.debug("  - {} {} (ID: {})", alloc2.getFirstName(), alloc2.getLastName(), alloc2.getId());
-        log.debug("  - {} {} (ID: {})", alloc3.getFirstName(), alloc3.getLastName(), alloc3.getId());
+        log.debug("Test beneficiaries created:");
+        log.debug("  - {} {} (ID: {})", beneficiary1.getFirstName(), beneficiary1.getLastName(), beneficiary1.getId());
+        log.debug("  - {} {} (ID: {})", beneficiary2.getFirstName(), beneficiary2.getLastName(), beneficiary2.getId());
+        log.debug("  - {} {} (ID: {})", beneficiary3.getFirstName(), beneficiary3.getLastName(), beneficiary3.getId());
     }
 }
 

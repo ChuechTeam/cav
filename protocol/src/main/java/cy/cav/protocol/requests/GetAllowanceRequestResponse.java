@@ -1,4 +1,4 @@
-package cy.cav.protocol.demandes;
+package cy.cav.protocol.requests;
 
 import cy.cav.framework.Message;
 
@@ -6,15 +6,15 @@ import java.time.LocalDate;
 import java.util.UUID;
 
 /**
- * Response with demande information.
+ * Response with allowance request information.
  */
-public record GetDemandeResponse(
-    UUID demandeId,
-    UUID allocataireId,
-    String allocationType,
+public record GetAllowanceRequestResponse(
+    UUID requestId,
+    UUID beneficiaryId,
+    String allowanceType,
     LocalDate requestDate,
     String status,
-    UUID allocationId,
+    UUID allowanceId,
     Double monthlyAmount,
     String rejectionReason
 ) implements Message.Response {}

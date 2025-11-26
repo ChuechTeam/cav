@@ -4,34 +4,34 @@ import java.time.LocalDate;
 import java.util.UUID;
 
 /**
- * Represents a payment (paiement d'allocation)
+ * Represents a payment (allowance payment)
  */
-public class Versement {
+public class Payment {
     private UUID id;
-    private UUID allocationId;            // Référence à l'allocation
-    private UUID allocataireId;           // Référence à l'allocataire
-    private double amount;                // Montant versé
-    private LocalDate paymentDate;        // Date du versement
-    private PaymentStatus status;         // Statut du versement
-    private String failureReason;         // Raison d'échec si status = FAILED
+    private UUID allowanceId;            // Reference to allowance
+    private UUID beneficiaryId;          // Reference to beneficiary
+    private double amount;                // Paid amount
+    private LocalDate paymentDate;       // Payment date
+    private PaymentStatus status;         // Payment status
+    private String failureReason;         // Failure reason if status = FAILED
     
-    // Constructeur par défaut
-    public Versement() {
+    // Default constructor
+    public Payment() {
         this.id = UUID.randomUUID();
         this.status = PaymentStatus.SCHEDULED;
     }
     
-    // Constructeur avec paramètres essentiels
-    public Versement(UUID allocationId, UUID allocataireId, double amount, LocalDate paymentDate) {
+    // Constructor with essential parameters
+    public Payment(UUID allowanceId, UUID beneficiaryId, double amount, LocalDate paymentDate) {
         this();
-        this.allocationId = allocationId;
-        this.allocataireId = allocataireId;
+        this.allowanceId = allowanceId;
+        this.beneficiaryId = beneficiaryId;
         this.amount = amount;
         this.paymentDate = paymentDate;
     }
     
     
-    // Getters et Setters
+    // Getters and Setters
     public UUID getId() {
         return id;
     }
@@ -40,20 +40,20 @@ public class Versement {
         this.id = id;
     }
     
-    public UUID getAllocationId() {
-        return allocationId;
+    public UUID getAllowanceId() {
+        return allowanceId;
     }
     
-    public void setAllocationId(UUID allocationId) {
-        this.allocationId = allocationId;
+    public void setAllowanceId(UUID allowanceId) {
+        this.allowanceId = allowanceId;
     }
     
-    public UUID getAllocataireId() {
-        return allocataireId;
+    public UUID getBeneficiaryId() {
+        return beneficiaryId;
     }
     
-    public void setAllocataireId(UUID allocataireId) {
-        this.allocataireId = allocataireId;
+    public void setBeneficiaryId(UUID beneficiaryId) {
+        this.beneficiaryId = beneficiaryId;
     }
     
     public double getAmount() {

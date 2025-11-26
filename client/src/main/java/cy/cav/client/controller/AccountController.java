@@ -1,9 +1,8 @@
 package cy.cav.client.controller;
 
+import cy.cav.client.ServiceAPI;
 import cy.cav.client.dto.AllocataireDTO;
 import cy.cav.client.dto.AllocataireResponse;
-import cy.cav.framework.*;
-import cy.cav.protocol.KnownActors;
 import cy.cav.protocol.accounts.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,14 +14,14 @@ import java.util.UUID;
 
 // REST controller for allocataire accounts (gestion des comptes allocataires)
 @RestController
-@RequestMapping("/api/comptes")
+@RequestMapping("/api/accounts")
 public class AccountController {
     private static final Logger log = LoggerFactory.getLogger(AccountController.class);
     
-    private final World world;
+    private final ServiceAPI serviceAPI;
     
-    public AccountController(World world) {
-        this.world = world;
+    public AccountController(ServiceAPI serviceAPI) {
+        this.serviceAPI = serviceAPI;
     }
     
     // Creates a new allocataire account (création d'un compte allocataire)
@@ -45,18 +44,15 @@ public class AccountController {
                 dto.iban()
             );
             
-            // Get proxy actor address
-            ActorAddress proxyAddress = getProxyAddress();
+            // Send request via ServiceAPI (which forwards to service)
+            CreateAccountResponse response = serviceAPI.createAccount(request);
             
-            // Send request to proxy (which forwards to service)
-            CreateAccountResponse response = world.querySync(proxyAddress, request);
-            
-            log.info("Compte créé: {} (ID: {})", response.allocataireNumber(), response.allocataireId());
+            log.info("Compte créé: {} (ID: {})", response.beneficiaryNumber(), response.beneficiaryId());
             
             return ResponseEntity.status(HttpStatus.CREATED).body(
                 new AllocataireResponse(
-                    response.allocataireId(),
-                    response.allocataireNumber(),
+                    response.beneficiaryId(),
+                    response.beneficiaryNumber(),
                     response.registrationDate(),
                     response.status()
                 )
@@ -75,16 +71,13 @@ public class AccountController {
             // Create request message
             GetAccountRequest request = new GetAccountRequest(id);
             
-            // Get proxy actor address
-            ActorAddress proxyAddress = getProxyAddress();
-            
-            // Send request to proxy (which forwards to service)
-            GetAccountResponse response = world.querySync(proxyAddress, request);
+            // Send request via ServiceAPI (which forwards to service)
+            GetAccountResponse response = serviceAPI.getAccount(request);
             
             return ResponseEntity.ok(
                 new AllocataireResponse(
-                    response.allocataireId(),
-                    response.allocataireNumber(),
+                    response.beneficiaryId(),
+                    response.beneficiaryNumber(),
                     response.registrationDate(),
                     response.status()
                 )
@@ -96,11 +89,5 @@ public class AccountController {
         }
     }
     
-    //Récupère l'adresse de l'acteur AllocataireProxy
-
-    private ActorAddress getProxyAddress() {
-        // The proxy is spawned in the client's world with GESTIONNAIRE_COMPTE ID
-        return world.server().address(KnownActors.GESTIONNAIRE_COMPTE);
-    }
 }
 

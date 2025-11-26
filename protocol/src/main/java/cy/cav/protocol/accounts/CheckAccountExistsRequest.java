@@ -5,12 +5,9 @@ import cy.cav.framework.Message;
 import java.util.UUID;
 
 /**
- * Request to check if an allocataire account exists.
- * Sent from client to GestionnaireCompte (service).
- * 
- * Demande de vérification de l'existence d'un compte allocataire.
+ * Request to check if a beneficiary account exists.
  */
 public record CheckAccountExistsRequest(
-    UUID allocataireId
+    UUID beneficiaryId
 ) implements Message.Request<CheckAccountExistsResponse> {}
 
