@@ -1,6 +1,7 @@
 package cy.cav.framework;
 
 import jakarta.annotation.*;
+import org.slf4j.*;
 
 import java.time.*;
 import java.util.*;
@@ -23,6 +24,8 @@ public abstract class Actor {
     protected final World world;
     /// The address for this actor.
     protected final ActorAddress address;
+    /// The logger associated with this actor, used to log messages to the console.
+    protected final Logger log = LoggerFactory.getLogger(getClass());
     /// The state of this actor.
     private volatile ActorState state;
     /// The supervisor bound to this actor.
@@ -192,10 +195,14 @@ public abstract class Actor {
             case SUPERVISED -> {
                 Supervisor.ProcessAction whatToDo = supervisor.process(envelope);
                 switch (whatToDo) {
-                    case STAY_ATTACHED -> { }
-                    case DETACH -> {
+                    case Supervisor.ProcessAction.StayAttached() -> { }
+                    case Supervisor.ProcessAction.Detach(List<Envelope<?>> envelopes) -> {
                         state = ActorState.ALIVE;
                         supervisor.detached();
+
+                        for (Envelope<?> envelopeToProcess : envelopes) {
+                            this.acceptEnvelope(envelopeToProcess);
+                        }
                     }
                 }
             }

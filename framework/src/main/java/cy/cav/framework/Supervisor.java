@@ -2,6 +2,8 @@ package cy.cav.framework;
 
 import org.slf4j.*;
 
+import java.util.*;
+
 public abstract class Supervisor {
     private static final Logger log = LoggerFactory.getLogger(Supervisor.class);
 
@@ -11,20 +13,25 @@ public abstract class Supervisor {
 
     protected abstract HandleAction handle(Exception e, Envelope<?> envelope);
 
-    protected void attached() {}
+    protected void attached() { }
 
     protected abstract ProcessAction process(Envelope<?> envelope);
 
-    protected void detached() {}
+    protected void detached() { }
 
     public enum HandleAction {
         IGNORE,
         ATTACH
     }
 
-    public enum ProcessAction {
-        STAY_ATTACHED,
-        DETACH
+    public sealed interface ProcessAction {
+        record Detach(List<Envelope<?>> envelopesToProcess) implements ProcessAction {
+            public Detach {
+                Objects.requireNonNull(envelopesToProcess);
+            }
+        }
+
+        record StayAttached() implements ProcessAction { }
     }
 
     public static final class Default extends Supervisor {
@@ -40,7 +47,7 @@ public abstract class Supervisor {
 
         @Override
         protected ProcessAction process(Envelope<?> envelope) {
-            return ProcessAction.DETACH;
+            return new ProcessAction.Detach(List.of());
         }
     }
 }
