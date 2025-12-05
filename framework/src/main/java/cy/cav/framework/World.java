@@ -118,7 +118,7 @@ public class World implements SmartLifecycle {
                 }
 
                 // Complete the future with the message contained inside the envelope.
-                log.info("Received response envelope for request {}: {}", envelope.requestId(), envelope);
+                log.debug("Received response envelope for request {}: {}", envelope.requestId(), envelope);
                 try {
                     ((CompletableFuture<Object>) request.future).complete(envelope.body());
                 } catch (Exception e) {
@@ -133,7 +133,7 @@ public class World implements SmartLifecycle {
             Actor receiver = actors.getOrDefault(envelope.receiver().actorNumber(), null);
             if (receiver != null) {
                 // The actor has been found! Let it process the envelope.
-                log.info("Received envelope for actor {}: {}", receiver, envelope);
+                log.debug("Received envelope for actor {}: {}", receiver, envelope);
                 try {
                     receiver.acceptEnvelope(envelope);
                 } catch (Exception e) {
@@ -224,7 +224,7 @@ public class World implements SmartLifecycle {
         // todo: what if this throws an exception? + possible race condition
         actor.reportSpawned(supervisorCreator != null ? supervisorCreator.apply(actor) : null);
 
-        log.info("New actor of id {} spawned: {}", id, actor);
+        log.debug("New actor of id {} spawned: {}", id, actor);
 
         // Return the id we created.
         return id;
@@ -237,7 +237,7 @@ public class World implements SmartLifecycle {
         Actor despawnedActor = actors.remove(actorNumber);
         if (despawnedActor != null) {
             despawnedActor.reportDespawned(); // todo: what if this throws an exception?
-            log.info("Actor number {} despawned: {}", despawnedActor.address, despawnedActor);
+            log.debug("Actor number {} despawned: {}", despawnedActor.address, despawnedActor);
         }
     }
 
@@ -352,15 +352,17 @@ public class World implements SmartLifecycle {
             // The actor we want to send the message to is in this world!
             // Just add the envelope to our local queue.
             mailbox.add(envelope);
-            log.info("Sent envelope {} to this world's mailbox", envelope);
+            log.debug("Sent envelope {} to this world's mailbox", envelope);
         } else {
             // The message is destined to another server. Send it on the network!
             outsideSender.send(envelope);
         }
     }
 
-    /// Called by [OutsideReceiver] to receive envelopes coming from the network.
-    void receive(Envelope<?> envelope) {
+    /// Receives an envelope coming from any source, let it be from the network or from somewhere else.
+    ///
+    /// You can call this method to receive envelopes coming from any service, like a message bus.
+    public void receive(Envelope<?> envelope) {
         mailbox.add(envelope);
     }
 

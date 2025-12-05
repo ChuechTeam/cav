@@ -36,7 +36,7 @@ public class Framework {
     // Allows users of the framework to put their own Server settings.
     @Bean
     @ConditionalOnMissingBean
-    Server server(Environment environment, FrameworkConfig config) {
+    Server server(Environment environment, FrameworkConfig config, List<MetadataInit> metadataInits) {
         long id;
         try {
             // Pick a random server id using cryptographically secure randomness.
@@ -46,7 +46,14 @@ public class Framework {
             throw new RuntimeException("SecureRandom isn't supported; cannot generate server id.", e);
         }
 
-        return new Server(id, environment.getProperty("spring.application.name"), null, config.metadata());
+        // Customize metadata according to MetadataInits
+        var metadata = new HashMap<>(config.metadata());
+        for (MetadataInit metadataInit : metadataInits) {
+            metadataInit.populate(id, metadata);
+        }
+
+        // Finally, create the server
+        return new Server(id, environment.getProperty("spring.application.name"), null, metadata);
     }
 
     @Bean

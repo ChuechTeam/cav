@@ -184,10 +184,7 @@ public abstract class Actor {
                 } catch (Exception e) {
                     Supervisor.HandleAction whatToDo = supervisor.handle(e, envelope);
                     switch (whatToDo) {
-                        case ATTACH -> {
-                            state = ActorState.SUPERVISED;
-                            supervisor.attached();
-                        }
+                        case ATTACH -> state = ActorState.SUPERVISED;
                         case IGNORE -> { }
                     }
                 }
@@ -195,14 +192,10 @@ public abstract class Actor {
             case SUPERVISED -> {
                 Supervisor.ProcessAction whatToDo = supervisor.process(envelope);
                 switch (whatToDo) {
-                    case Supervisor.ProcessAction.StayAttached() -> { }
-                    case Supervisor.ProcessAction.Detach(List<Envelope<?>> envelopes) -> {
+                    case Supervisor.ProcessAction.STAY_ATTACHED -> { }
+                    case Supervisor.ProcessAction.DETACH -> {
                         state = ActorState.ALIVE;
-                        supervisor.detached();
-
-                        for (Envelope<?> envelopeToProcess : envelopes) {
-                            this.acceptEnvelope(envelopeToProcess);
-                        }
+                        supervisor.flushStash();
                     }
                 }
             }

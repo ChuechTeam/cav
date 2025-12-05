@@ -1,8 +1,8 @@
-# La CAV
+# La CAV - Caisse d'allocations virtuelles
 
 ## Prérequis
 
-- Java 25 dans le PATH
+- Java 25 dans le PATH à télécharger avec [Eclipse Adoptium](https://adoptium.net/fr/temurin/releases?version=25&os=any&arch=any)
 - Python 3
 
 ## Pour lancer le projet
