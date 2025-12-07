@@ -72,8 +72,32 @@ public class AllocRequestController {
         // Get Beneficiary actor address
         ActorAddress beneficiaryAddress = serviceServer.get().address(KnownActors.BENEFICIARY);
         
-        // Send notification to Beneficiary actor (triggers full process on server side)
-        RequestAllowanceNotification notification = new RequestAllowanceNotification(
+        // TODO: requestId inconnu côté client, important pour l'endpoint GET /api/requests/{requestId}
+        // 
+        // PROBLÈME :
+        // - Demande créée de manière asynchrone côté server (dans Beneficiary.requestAllowance)
+        // - Le client peut pas connaître le requestId tout de suite (car statut PENDING)
+        // - Le client ne peut donc pas suivre la demande via endpoint GET /api/requests/{requestId}
+        //
+        // SOLUTION : 
+        // - Créer la demande de manière synchrone côté client (via CreateAllowanceRequestRequest)
+        // - Envoyer la notification RequestAllowanceNotification avec le requestId existant
+        // - Le serveur peut alors traiter la demande en utilisant le requestId fourni
+        // - Ainsi, le client connaît le requestId immédiatement et peut suivre la demande
+        // - Le workflow complet reste asynchrone côté serveur pour le calcul RSA
+        //
+        // solution implémentée ci-dessous :
+        // Créer la demande de manière synchrone côté client (via CreateAllowanceRequestRequest)
+        CreateAllowanceRequestRequest createRequest = new CreateAllowanceRequestRequest(
+            dto.beneficiaryId(),
+            "RSA"
+        );
+        CreateAllowanceRequestResponse createResponse = serviceAPI.createAllowanceRequest(createRequest);
+        UUID requestId = createResponse.requestId();
+
+        // Send notification to Beneficiary actor with existing requestId
+        RequestAllowanceNotification notificationWithId = new RequestAllowanceNotification(
+            requestId,
             dto.beneficiaryId(),
             "RSA",
             dto.monthlyIncome(),
@@ -81,24 +105,14 @@ public class AllocRequestController {
             dto.inCouple(),
             dto.hasHousing()
         );
-        
-        log.info("Sending RequestAllowanceNotification to Beneficiary actor");
-        
-        // Send notification (fire and forget)
-        world.send(world.server().address(), beneficiaryAddress, notification);
-        
-        // TODO: requestId inconnu côté client, important pour l'endpoint GET /api/requests/{requestId}
-        // 
-        // PROBLÈME :
-        // - Demande créée de manière asynchrone côté server (dans Beneficiary.requestAllowance)
-        // - Le client peut pas connaître le requestId tout de suite (car statut PENDING)
-        // - Le client ne peut donc pas suivre la demande via endpoint GET /api/requests/{requestId}
-        // à voir
+        log.info("Sending RequestAllowanceNotification to Beneficiary actor for requestId: {}", requestId);
+        world.send(world.server().address(), beneficiaryAddress, notificationWithId);
+
         
         // Return immediate response (request is being processed asynchronously)
         return ResponseEntity.status(HttpStatus.ACCEPTED)
             .body(new AllowanceRequestResponse(
-                null,  // request id va être généré sur le serveur
+                requestId,  // request ID généré côté client
                 "PENDING",
                 null,
                 null,
