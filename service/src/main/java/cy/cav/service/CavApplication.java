@@ -2,7 +2,7 @@ package cy.cav.service;
 
 import cy.cav.framework.*;
 import cy.cav.protocol.*;
-import cy.cav.service.actors.Beneficiary;
+import cy.cav.service.actors.Prefecture;
 import cy.cav.service.actors.AllowanceRequest;
 import cy.cav.service.actors.calculateurs.RSACalculator;
 import cy.cav.service.store.AllocationStore;
@@ -30,8 +30,8 @@ public class CavApplication implements ApplicationListener<ApplicationStartedEve
         // Create a new greeter with a special id
         world.spawn(Greeter::new, KnownActors.GREETER);
         
-        // Spawn beneficiary actor (manages beneficiary accounts)
-        world.spawn(init -> new Beneficiary(init, store), KnownActors.BENEFICIARY);
+        // Spawn prefecture actor (manages beneficiary actors)
+        world.spawn(init -> new Prefecture(init, store), KnownActors.PREFECTURE);
         
         // Spawn allowance request actor (manages allowance requests)
         world.spawn(init -> new AllowanceRequest(init, store), KnownActors.ALLOWANCE_REQUEST);

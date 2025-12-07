@@ -13,7 +13,7 @@ public final class KnownActors {
     public static final Long PRIME_ACTIVITE_CALCULATOR = 104L;
     
     // Actors
-    public static final Long BENEFICIARY = 100L;  // Beneficiary account manager
+    public static final Long PREFECTURE = 100L;  // manages beneficiary actors
     public static final Long ALLOWANCE_REQUEST = 105L;  // Allowance request manager
     public static final Long PAYMENT_MANAGER = 110L;
     public static final Long ANOMALY_DETECTOR = 111L;

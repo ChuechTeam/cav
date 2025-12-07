@@ -27,15 +27,15 @@ public class ServiceAPI {
     }
     
     public CreateAccountResponse createAccount(CreateAccountRequest request) {
-        return forward(request, KnownActors.BENEFICIARY);
+        return forward(request, KnownActors.PREFECTURE);
     }
     
     public GetAccountResponse getAccount(GetAccountRequest request) {
-        return forward(request, KnownActors.BENEFICIARY);
+        return forward(request, KnownActors.PREFECTURE);
     }
     
     public CheckAccountExistsResponse checkAccountExists(CheckAccountExistsRequest request) {
-        return forward(request, KnownActors.BENEFICIARY);
+        return forward(request, KnownActors.PREFECTURE);
     }
     
     public CreateAllowanceRequestResponse createAllowanceRequest(CreateAllowanceRequestRequest request) {
@@ -48,6 +48,10 @@ public class ServiceAPI {
     
     public GetAllowanceRequestResponse getAllowanceRequest(GetAllowanceRequestRequest request) {
         return forward(request, KnownActors.ALLOWANCE_REQUEST);
+    }
+    
+    public RequestAllowanceResponse requestAllowance(RequestAllowanceRequest request) {
+        return forward(request, KnownActors.PREFECTURE);
     }
     
     private <T extends Message.Response> T forward(Message.Request<T> req, long actorId) {
