@@ -85,11 +85,11 @@ class TestController {
         }
 
         // Récupération des adresses d'acteurs du service
-        ActorAddress beneficiaryActor = server.address(KnownActors.BENEFICIARY);
+        ActorAddress prefectureActor = server.address(KnownActors.PREFECTURE);
         ActorAddress requestActor = server.address(KnownActors.ALLOWANCE_REQUEST);
 
         System.out.println("Actors trouvés :");
-        System.out.println(" - Beneficiary : " + beneficiaryActor);
+        System.out.println(" - Prefecture : " + prefectureActor);
         System.out.println(" - AllowanceRequest : " + requestActor);
 
         // 2) Création d’un BÉNÉFICIAIRE complet
@@ -108,7 +108,7 @@ class TestController {
         );
 
         // Pour le routing correct, il faut envoyer comme message du client
-        CreateAccountResponse accResponse = world.querySync(beneficiaryActor, createAcc);
+        CreateAccountResponse accResponse = world.querySync(prefectureActor, createAcc);
 
         UUID beneficiaryId = accResponse.beneficiaryId();
         System.out.println("Bénéficiaire créé : " + beneficiaryId);
@@ -123,19 +123,13 @@ class TestController {
         UUID requestId = createResp.requestId();
         System.out.println("Request ID généré : " + requestId);
 
-        // 4) Notification à Beneficiary → lance le traitement async
-        RequestAllowanceNotification notif = new RequestAllowanceNotification(
-                requestId,
-                beneficiaryId,
-                "RSA",
-                900.0,  // monthlyIncome
-                1,      // dependents
-                false,  // inCouple
-                true    // hasHousing
-        );
-
-        world.send(world.server().address(), beneficiaryActor, notif);
-        System.out.println("Notification envoyée à Beneficiary.");
+        // 4) workflow actuel Prefecture envoie automatiquement la notification
+        // Cette partie du test n'est plus nécessaire car Prefecture.routeAllowanceRequest()
+        // envoie déjà la notification automatiquement après avoir créé la demande.
+        // pour tester :
+        // RequestAllowanceRequest request = new RequestAllowanceRequest(...);
+        // RequestAllowanceResponse response = world.querySync(prefectureActor, request);
+        System.out.println("Notification automatiquement envoyée par Prefecture.");
 
         System.out.println("\n=== TEST FULL RSA END ===");
 

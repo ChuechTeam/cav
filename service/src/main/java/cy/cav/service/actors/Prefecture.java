@@ -191,6 +191,7 @@ public class Prefecture extends Actor {
         // STEP 3: Send notification to BeneficiaryActor to process asynchronously (fire and forget)
         // We use RequestAllowanceNotification which BeneficiaryActor can handle
         RequestAllowanceNotification notification = new RequestAllowanceNotification(
+            allowanceRequest.getId(),  // requestId - ID of the allowance request
             beneficiaryId,
             request.allowanceType(),
             request.monthlyIncome(),

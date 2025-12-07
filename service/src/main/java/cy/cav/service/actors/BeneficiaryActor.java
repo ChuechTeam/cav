@@ -214,20 +214,24 @@ public class BeneficiaryActor extends Actor {
             return;
         }
         
-        // Find the allowance request in the store (created by Prefecture)
+        // Find the allowance request in the store using the requestId from notification
         Optional<cy.cav.service.domain.AllowanceRequest> requestOpt = 
-            store.findRequestsByBeneficiaryId(beneficiary.getId()).stream()
-                .filter(r -> r.getAllowanceType().equals(notification.allowanceType()))
-                .filter(r -> "PENDING".equals(r.getStatus()))
-                .findFirst();
+            store.findRequestById(notification.requestId());
         
         if (requestOpt.isEmpty()) {
-            log.warn("No pending allowance request found for beneficiary: {}, type: {}", 
-                beneficiary.getId(), notification.allowanceType());
+            log.warn("Allowance request not found: {} for beneficiary: {}", 
+                notification.requestId(), beneficiary.getId());
             return;
         }
         
         cy.cav.service.domain.AllowanceRequest allowanceRequest = requestOpt.get();
+        
+        // Verify the request belongs to this beneficiary
+        if (!allowanceRequest.getBeneficiaryId().equals(beneficiary.getId())) {
+            log.warn("Allowance request {} does not belong to beneficiary: {}", 
+                notification.requestId(), beneficiary.getId());
+            return;
+        }
         
         log.info("Found allowance request: {} for beneficiary: {}", 
             allowanceRequest.getId(), beneficiary.getId());
