@@ -25,11 +25,11 @@ class ActorExample3 implements ApplicationListener<ApplicationStartedEvent> {
 }
 
 class Client extends Actor {
-    private final ActorAddress centerAddress;
+    private final ActorAddress calculator;
 
-    Client(ActorInit init, ActorAddress centerAddress) {
+    Client(ActorInit init, ActorAddress calculator) {
         super(init);
-        this.centerAddress = centerAddress;
+        this.calculator = calculator;
     }
 
     static final Random rng = new Random();
@@ -43,13 +43,13 @@ class Client extends Actor {
     @Override
     protected void spawned() {
         log.info("--- FIRST REQUEST STARTING SOON ---");
-        retryer.sendDelayed(centerAddress, new Calculate(25, UUID.randomUUID()), Duration.ofSeconds(1));
+        retryer.sendDelayed(calculator, new Calculate(25, UUID.randomUUID()), Duration.ofSeconds(1));
     }
 
     void calculateDone(CalculationDone response) {
         log.info("CLIENT: Calculation received with {} euros!", response.euros());
         log.info("--- NEW REQUEST IN 5 SECONDS ---");
-        retryer.sendDelayed(centerAddress, new Calculate(25, UUID.randomUUID()), Duration.ofSeconds(5));
+        retryer.sendDelayed(calculator, new Calculate(25, UUID.randomUUID()), Duration.ofSeconds(5));
     }
 
     @Override

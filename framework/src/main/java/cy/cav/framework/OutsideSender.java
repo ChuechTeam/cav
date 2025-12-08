@@ -14,6 +14,7 @@ import org.springframework.scheduling.TaskScheduler;
 import org.springframework.stereotype.*;
 import org.springframework.web.reactive.function.client.*;
 
+import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.*;
 
@@ -73,7 +74,7 @@ class OutsideSender {
                 //scheduler.schedule is deprecated since 6.0, TODO : find alternative or not 
                 scheduler.schedule(
                         () -> send(envelope, nextAttempt),
-                        new Date(System.currentTimeMillis() + RETRY_DELAY_MS)
+                        Instant.now().plusMillis(RETRY_DELAY_MS)
                 );
             } else {
                 // Retrying exhausted

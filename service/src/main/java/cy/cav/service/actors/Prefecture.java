@@ -40,8 +40,7 @@ public class Prefecture extends Actor {
         .route(CreateAccountRequest.class, Prefecture::createAccount)
         .route(GetAccountRequest.class, Prefecture::getAccount)
         .route(CheckAccountExistsRequest.class, Prefecture::checkAccountExists)
-        .route(RequestAllowanceRequest.class, (Prefecture prefecture, Envelope<RequestAllowanceRequest> envelope) -> 
-            prefecture.routeAllowanceRequest(envelope));
+        .route(RequestAllowanceRequest.class, Prefecture::routeAllowanceRequest);
     
     public Prefecture(ActorInit init, AllocationStore store) {
         super(init);
