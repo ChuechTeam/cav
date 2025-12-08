@@ -10,8 +10,7 @@ import java.util.UUID;
  * Contains the requestId immediately, allowing the client to track the request.
  */
 public record RequestAllowanceResponse(
-    UUID requestId,
-    String status,  // PENDING, ACCEPTED, REJECTED
-    LocalDate requestDate
+    boolean success,
+    String message
 ) implements Message.Response {}
 

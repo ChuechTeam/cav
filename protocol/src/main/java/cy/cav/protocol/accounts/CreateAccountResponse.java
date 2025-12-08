@@ -1,6 +1,7 @@
 package cy.cav.protocol.accounts;
 
-import cy.cav.framework.Message;
+import cy.cav.framework.*;
+import cy.cav.protocol.*;
 
 import java.time.LocalDate;
 import java.util.UUID;
@@ -10,8 +11,6 @@ import java.util.UUID;
  */
 public record CreateAccountResponse(
     UUID beneficiaryId,
-    String beneficiaryNumber,
-    LocalDate registrationDate,
-    String status
+    ActorAddress beneficiaryAddress
 ) implements Message.Response {}
 

@@ -36,7 +36,6 @@ class OutsideSender {
     @Autowired
     private TaskScheduler scheduler;
 
-
     private final Network network;
     private final WebClient webClient; // Allows us to do run requests in a callback fashion
 
@@ -52,9 +51,6 @@ class OutsideSender {
     /// Sends the envelope destined to an outside actor on the network.
     ///
     /// May not succeed due to network errors.
-    /// Version interne avec compteur de tentatives.
-
-    /// Init send method.
     public void send(Envelope<?> envelope) {
         send(envelope, 0);
     }
@@ -71,7 +67,6 @@ class OutsideSender {
                         "Failed to find URL for receiver (attempt {}/{}). Retrying in {} ms. Envelope: {}",
                         nextAttempt, MAX_SEND_ATTEMPTS, RETRY_DELAY_MS, envelope
                 );
-                //scheduler.schedule is deprecated since 6.0, TODO : find alternative or not 
                 scheduler.schedule(
                         () -> send(envelope, nextAttempt),
                         Instant.now().plusMillis(RETRY_DELAY_MS)
@@ -107,39 +102,3 @@ class OutsideSender {
                         receiverUrl, envelope, e));
     }
 }
-
-
-/* 
- *     public void send(Envelope<?> envelope) {
-        // Find the URL of the server this envelope should be sent to.
-        Server receiver = network.servers().getOrDefault(envelope.receiver().serverId(), null);
-        String receiverUrl = receiver != null ? receiver.url() : null;
-
-        if (receiverUrl == null) {
-            log.error("Failed to send envelope, can't find URL for receiver server id: {}", envelope);
-            // todo: retry sending after a while then give up. Hint: TaskScheduler
-            return;
-        }
-
-        // Now send the envelope!
-        log.info("Sending envelope to server at URL {}: {}", receiverUrl, envelope);
-        webClient.post()
-                .uri(receiverUrl + (receiverUrl.endsWith("/") ? "mailbox" : "/mailbox"))
-                .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(envelope)
-                .retrieve()
-                .toBodilessEntity()
-                .subscribe(r -> {
-                    // We got a response from the OutsideReceiver controller!
-                    if (r.getStatusCode().is2xxSuccessful()) {
-                        log.info("Successfully sent envelope to external server at URL {}: {}", receiverUrl, envelope);
-                    } else {
-                        log.error("Failed to send envelope to external server at URL {} (status code {}): {}",
-                                receiverUrl, r.getStatusCode(), envelope);
-                    }
-                }, e -> log.error("Failed to send envelope to external server at URL {}: {}",
-                        receiverUrl, envelope, e));
-    }
-}
-
- */

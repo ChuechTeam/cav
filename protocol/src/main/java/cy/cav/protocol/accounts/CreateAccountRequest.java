@@ -2,6 +2,7 @@ package cy.cav.protocol.accounts;
 
 import cy.cav.framework.Message;
 
+import java.math.*;
 import java.time.LocalDate;
 
 /**
@@ -17,7 +18,7 @@ public record CreateAccountRequest(
     String address,
     boolean inCouple,
     int numberOfDependents,
-    double monthlyIncome,
+    BigDecimal monthlyIncome,
     String iban
 ) implements Message.Request<CreateAccountResponse> {}
 

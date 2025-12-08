@@ -55,4 +55,12 @@ public record ActorAddress(long serverId, long actorNumber) {
     public boolean isServerAddress() {
         return actorNumber == 0;
     }
+
+    /// Converts String values to Actor Addresses for Spring controllers.
+    public static class Converter implements org.springframework.core.convert.converter.Converter<String, ActorAddress> {
+        @Override
+        public ActorAddress convert(String source) {
+            return ActorAddress.fromString(source);
+        }
+    }
 }

@@ -1,5 +1,6 @@
 package cy.cav.client.dto;
 
+import java.math.*;
 import java.time.LocalDate;
 
 // DTO for creating an allocataire (création d'un allocataire)
@@ -12,7 +13,7 @@ public record AllocataireDTO(
     String address,
     boolean inCouple,
     int numberOfDependents,
-    double monthlyIncome,
+    BigDecimal monthlyIncome,
     String iban
 ) {}
 

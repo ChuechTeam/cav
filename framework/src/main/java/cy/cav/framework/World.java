@@ -120,7 +120,12 @@ public class World implements SmartLifecycle {
                 // Complete the future with the message contained inside the envelope.
                 log.debug("Received response envelope for request {}: {}", envelope.requestId(), envelope);
                 try {
-                    ((CompletableFuture<Object>) request.future).complete(envelope.body());
+                    var future = (CompletableFuture<Object>) request.future;
+                    if (envelope.body() instanceof ActorNotFoundResponse(ActorAddress address)) {
+                        future.completeExceptionally(new ActorNotFoundException("Failed to find actor " + address));
+                    } else {
+                        future.complete(envelope.body());
+                    }
                 } catch (Exception e) {
                     log.error("Exception occurred while processing request response for envelope {}", envelope, e);
                 }
@@ -137,16 +142,19 @@ public class World implements SmartLifecycle {
                 try {
                     receiver.acceptEnvelope(envelope);
                 } catch (Exception e) {
-                    // todo: supervision
+                    // In case the supervisor doesn't do its work properly...
                     log.error("Exception occured while actor {} is processing envelope {}", receiver, envelope, e);
                 }
             } else {
                 // Then the actor is either:
                 // - dead
-                // - not a actor we know about
+                // - not an actor we know about
                 //
-                // So just ignore it!
+                // So just ignore it! But if it's a request, then we need to tell them that the actor doesn't exist.
                 log.warn("Received envelope for an unknown actor: {}", envelope);
+                if (envelope.requestId() != 0) {
+                    respond(server.address(), envelope, new ActorNotFoundResponse(envelope.receiver()));
+                }
             }
         }
 
@@ -314,13 +322,21 @@ public class World implements SmartLifecycle {
     ///
     /// @param receiver the id of the actor to send the message to
     /// @param body     the body of the message
-    public <T extends Message.Response> T querySync(ActorAddress receiver, Message.Request<T> body) {
+    /// @throws ActorNotFoundException when the receiver actor does not exist
+    public <T extends Message.Response> T querySync(ActorAddress receiver, Message.Request<T> body)
+            throws ActorNotFoundException {
         try {
             return query(null, receiver, body)
                     .toCompletableFuture()
                     .get();
-        } catch (InterruptedException | ExecutionException e) {
-            throw new RuntimeException("Query sync failed", e);
+        } catch (InterruptedException e) {
+            throw new RuntimeException("Query sync interrupted", e);
+        } catch (ExecutionException e) {
+            if (e.getCause() instanceof ActorNotFoundException anfEx) {
+                throw anfEx;
+            } else {
+                throw new RuntimeException("Unknown query sync exception", e);
+            }
         }
     }
 
@@ -333,7 +349,7 @@ public class World implements SmartLifecycle {
         }, Instant.now().plus(delay)));
     }
 
-    /// Can only be called by [Actor]; it doesn't make sense to respond to requests outside an actor.
+    /// Can only be called by [Actor] or by [World].
     void respond(ActorAddress responder, Envelope<?> envelope, Message.Response body) {
         if (envelope.requestId() == 0) {
             // Don't send the message if this isn't a request. That means the sender doesn't care about our response,

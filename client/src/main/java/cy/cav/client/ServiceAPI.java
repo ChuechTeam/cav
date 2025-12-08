@@ -29,31 +29,7 @@ public class ServiceAPI {
     public CreateAccountResponse createAccount(CreateAccountRequest request) {
         return forward(request, KnownActors.PREFECTURE);
     }
-    
-    public GetAccountResponse getAccount(GetAccountRequest request) {
-        return forward(request, KnownActors.PREFECTURE);
-    }
-    
-    public CheckAccountExistsResponse checkAccountExists(CheckAccountExistsRequest request) {
-        return forward(request, KnownActors.PREFECTURE);
-    }
-    
-    public CreateAllowanceRequestResponse createAllowanceRequest(CreateAllowanceRequestRequest request) {
-        return forward(request, KnownActors.ALLOWANCE_REQUEST);
-    }
-    
-    public UpdateAllowanceRequestResponse updateAllowanceRequest(UpdateAllowanceRequestRequest request) {
-        return forward(request, KnownActors.ALLOWANCE_REQUEST);
-    }
-    
-    public GetAllowanceRequestResponse getAllowanceRequest(GetAllowanceRequestRequest request) {
-        return forward(request, KnownActors.ALLOWANCE_REQUEST);
-    }
-    
-    public RequestAllowanceResponse requestAllowance(RequestAllowanceRequest request) {
-        return forward(request, KnownActors.PREFECTURE);
-    }
-    
+
     private <T extends Message.Response> T forward(Message.Request<T> req, long actorId) {
         Server server = findServiceServer();
         if (server == null) {
@@ -66,8 +42,13 @@ public class ServiceAPI {
         ActorAddress actorAddress = server.address(actorId);
         log.debug("Forwarding request {} to actor {} on server {}", 
             req.getClass().getSimpleName(), actorId, server.appName());
-        
-        return world.querySync(actorAddress, req);
+
+        try {
+            return world.querySync(actorAddress, req);
+        } catch (ActorNotFoundException e) {
+            // We assume the actor always exists here because it's a well-known actor.
+            throw new RuntimeException(e);
+        }
     }
     
     private Server findServiceServer() {

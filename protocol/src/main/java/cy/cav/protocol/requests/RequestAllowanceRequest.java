@@ -1,20 +1,15 @@
 package cy.cav.protocol.requests;
 
 import cy.cav.framework.Message;
+import cy.cav.protocol.*;
 
 import java.util.UUID;
 
 /**
  * Request to create and process an allowance request.
- * The request is processed asynchronously ([allowance type] calculation, etc.), but the requestId
- * is returned immediately so the client can track the request.
+ * The request is processed asynchronously ([allowance type] calculation, etc.).
  */
 public record RequestAllowanceRequest(
-    UUID beneficiaryId,
-    String allowanceType,  // RSA, ARE, APL, PRIME_ACTIVITE
-    double monthlyIncome,
-    int numberOfDependents,
-    boolean inCouple,
-    boolean hasHousing
+    AllowanceType type
 ) implements Message.Request<RequestAllowanceResponse> {}
 

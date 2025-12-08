@@ -82,6 +82,11 @@ public class Framework {
         return new OutsideReceiver(world);
     }
 
+    @Bean
+    ActorAddress.Converter addressConverter() {
+        return new ActorAddress.Converter();
+    }
+
     /// Initializes the Eureka configuration with the right settings.
     private static class EurekaInit {
         EurekaInit(EurekaInstanceConfigBean config, Server server) {
