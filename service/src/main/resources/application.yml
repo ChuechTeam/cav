@@ -11,6 +11,8 @@ cav:
       salut: ça va ?
       test: 1 2 3
       role: PREFECTURE
+      supportsPrefecture: true
+      supportsCalculators: true
     applications:
       - cav-service
       - cav-client

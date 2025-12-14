@@ -12,6 +12,7 @@ import java.util.*;
 public record GetAccountResponse(
         UUID beneficiaryId,
         BeneficiaryProfile profile,
+        List<Payment> payments,
         Map<AllowanceType, AllowancePrevision> allowancePrevisions
 ) implements Message.Response {
 }

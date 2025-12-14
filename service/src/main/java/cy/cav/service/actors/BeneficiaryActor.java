@@ -6,9 +6,9 @@ import cy.cav.protocol.*;
 import cy.cav.protocol.accounts.*;
 import cy.cav.protocol.allowances.*;
 import cy.cav.protocol.requests.*;
+import cy.cav.service.*;
 import cy.cav.service.domain.*;
 import cy.cav.service.domain.AllowancePrevision;
-import cy.cav.service.store.*;
 import org.slf4j.*;
 
 import java.time.*;
@@ -32,7 +32,8 @@ public class BeneficiaryActor extends Actor {
     private final Beneficiary beneficiary;
 
     // Store for persistence (UI display)
-    private final AllocationStore store;
+    private final Store store;
+    private final ServerFinder serverFinder;
 
     /// Allowances that are wanted by the beneficiary, with their previsions.
     ///
@@ -42,12 +43,18 @@ public class BeneficiaryActor extends Actor {
     /// Sends messages over and over, to calculators.
     private final AckRetryer retryer = AckRetryer.additiveDelay(this, Duration.ofSeconds(15), Duration.ofSeconds(10));
 
+    private final AckStore<ReceivePayments.Ack> paymentAckStore = new AckStore<>(this);
+
+    private LocalDate currentMonth;
+
     static final Router<BeneficiaryActor> router = new Router<BeneficiaryActor>()
             .route(GetAccountRequest.class, BeneficiaryActor::getAccount)
             .route(RequestAllowanceRequest.class, BeneficiaryActor::requestAllowance)
-            .route(AllowanceCalculated.class, BeneficiaryActor::allowanceCalculated);
+            .route(CalculateAllowance.Ack.class, BeneficiaryActor::allowanceCalculated)
+            .route(PayAllowances.class, BeneficiaryActor::payAllowances)
+            .route(ReceivePayments.class, BeneficiaryActor::receivePayments);
 
-    public BeneficiaryActor(ActorInit init, Beneficiary beneficiary, AllocationStore store) {
+    public BeneficiaryActor(ActorInit init, LocalDate currentMonth, Beneficiary beneficiary, Store store, ServerFinder serverFinder) {
         super(init);
         // Initialize all prevision types with default previsions.
         for (AllowanceType type : AllowanceType.values()) {
@@ -55,6 +62,8 @@ public class BeneficiaryActor extends Actor {
         }
         this.beneficiary = beneficiary;
         this.store = store;
+        this.currentMonth = currentMonth;
+        this.serverFinder = serverFinder;
     }
 
     @Override
@@ -72,7 +81,7 @@ public class BeneficiaryActor extends Actor {
             beneficiary.setRegistrationDate(registrationDate);
         }
 
-        store.saveBeneficiary(beneficiary);
+        store.beneficiaries().put(beneficiary.getId(), beneficiary);
     }
 
     @Override
@@ -99,6 +108,7 @@ public class BeneficiaryActor extends Actor {
         return new GetAccountResponse(
                 beneficiary.getId(),
                 beneficiary.toProfile(),
+                List.copyOf(beneficiary.getPayments()),
                 protocolPrevisions
         );
     }
@@ -112,22 +122,70 @@ public class BeneficiaryActor extends Actor {
                 beneficiary.getId(), request);
 
         // Create the message and send it to the calculator
-        ActorAddress calculator = request.type().calculatorActor(world.server());
         CalculateAllowance message = new CalculateAllowance(beneficiary.toProfile());
-        retryer.send(calculator, message);
+        retryer.send(_ -> serverFinder.pickCalculatorActor(request.type()), message);
 
         // Update the prevision --> PENDING
         AllowancePrevision prevision = allowancePrevisions.get(request.type());
+        if (prevision.getAckId() != null) {
+            retryer.giveUp(prevision.getAckId());
+        }
         prevision.start(message.ackId());
 
         return new RequestAllowanceResponse(true, "La demande a bien été envoyée !");
     }
 
-    private void allowanceCalculated(AllowanceCalculated allowanceCalculated) {
-        log.info("Received allowance calculation: {}", allowanceCalculated);
+    private void allowanceCalculated(CalculateAllowance.Ack ack) {
+        log.info("Received allowance calculation: {}", ack);
 
-        AllowancePrevision prevision = allowancePrevisions.get(allowanceCalculated.type());
-        prevision.receiveResult(allowanceCalculated.ackId(), allowanceCalculated.amount(), allowanceCalculated.message());
+        AllowancePrevision prevision = allowancePrevisions.get(ack.type());
+        prevision.receiveResult(ack.ackId(), ack.amount(), ack.message());
+    }
+
+    private void payAllowances(Envelope<PayAllowances> envelope) {
+        // First see if we already paid this month of allowances.
+        PayAllowances message = envelope.body();
+        if (currentMonth.isAfter(message.month())) {
+            log.info("Received PayAllowance with a month in the past: {}; ignoring", message.month());
+            send(envelope.sender(), new PayAllowances.Ack(message.ackId()));
+            return;
+        }
+
+        // Gather all allowance types we want
+        Set<AllowanceType> wantedTypes = EnumSet.noneOf(AllowanceType.class);
+        for (AllowancePrevision prevision : allowancePrevisions.values()) {
+            if (prevision.getState() != AllowancePrevisionState.UNWANTED) {
+                wantedTypes.add(prevision.getType());
+            }
+        }
+
+        // Then start a payment process if we want some allowances
+        if (!wantedTypes.isEmpty()) {
+            BeneficiaryProfile profile = beneficiary.toProfile();
+            world.spawn(init -> new PaymentProcess(init, serverFinder, address, profile, message.month(), wantedTypes));
+        }
+
+        // Switch to the next month
+        LocalDate prevMonth = currentMonth;
+        currentMonth = message.month().plusMonths(1);
+        log.info("Beneficiary {} has now moved from month {} to {}", address, prevMonth, currentMonth);
+
+        // All good!
+        send(envelope.sender(), new PayAllowances.Ack(message.ackId()));
+    }
+
+    private void receivePayments(Envelope<ReceivePayments> envelope) {
+        if (paymentAckStore.sendIfAcknowledged(envelope)) {
+            return;
+        }
+
+        ReceivePayments message = envelope.body();
+        for (cy.cav.protocol.Payment payment : message.payments()) {
+            beneficiary.getPayments().add(new Payment(payment.label(), payment.amount()));
+        }
+
+        log.info("Received {} payments from actor {}", message.payments().size(), envelope.sender());
+        paymentAckStore.send(envelope.sender(), new ReceivePayments.Ack(message.ackId()));
     }
 
     /**

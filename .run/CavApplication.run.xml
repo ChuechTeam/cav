@@ -2,6 +2,7 @@
   <configuration default="false" name="CavApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" singleton="false" nameIsGenerated="true">
     <option name="FRAME_DEACTIVATION_UPDATE_POLICY" value="UpdateClassesAndResources" />
     <module name="service" />
+    <option name="PROGRAM_PARAMETERS" value="--cav.framework.metadata.role=CALCULATOR" />
     <option name="SPRING_BOOT_MAIN_CLASS" value="cy.cav.service.CavApplication" />
     <method v="2">
       <option name="Make" enabled="true" />

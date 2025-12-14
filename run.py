@@ -4,8 +4,8 @@
 #
 # USAGE:
 # 
-# Windows: python run.py [modules...]
-# Linux:   ./run.py [modules...]
+# Windows: python run.py [modules...] [-p] [-c] -- args
+# Linux:   ./run.py [modules...] [-p] [-c] -- args
 #
 # Where modules is a list of modules you want to spawn, which can be either:
 # - client
@@ -44,10 +44,20 @@ discovery_jar_path = root_path / "discovery" / "target" / "discovery.jar"
 run_client = False
 run_service = False
 run_discovery = False
+passthrough = False
+passthrough_args = []
+service_args = []
 for arg in sys.argv:
+    if passthrough:
+        passthrough_args.append(arg)
+        continue
+
+    if arg == "--": passthrough = True
     if arg == "client" or arg == "all": run_client = True
     if arg == "service" or arg == "all": run_service = True
     if arg == "discovery" or arg == "all": run_discovery = True
+    if arg == "--prefecture-only" or arg == "-p": service_args.extend(["--cav.framework.metadata.supportsPrefecture=true", "--cav.framework.metadata.supportsCalculators=false"])
+    if arg == "--calculators-only" or arg == "-c": service_args.extend(["--cav.framework.metadata.supportsPrefecture=false", "--cav.framework.metadata.supportsCalculators=true"])
 
 if not run_client and not run_service and not run_discovery:
     print("No modules to run! Usage: run.py [modules...]. Modules can be 'client', 'service', or 'discovery', or even 'all' if you feel like it!")
@@ -62,10 +72,10 @@ if maven_result.returncode != 0:
     
 # Spawn the services
 alive_procs = []
-if run_discovery: alive_procs.append(("Discovery", subprocess.Popen([java_path, "-jar", discovery_jar_path], text=True)))
-if run_service: alive_procs.append(("Service", subprocess.Popen([java_path, "-jar", service_jar_path], text=True)))
+if run_discovery: alive_procs.append(("Discovery", subprocess.Popen([java_path, "-jar", discovery_jar_path] + passthrough_args, text=True)))
+if run_service: alive_procs.append(("Service", subprocess.Popen([java_path, "-jar", service_jar_path] + service_args + passthrough_args, text=True)))
 # here we use run to redirect stdin properly else it's a nightmare honestly
-if run_client: subprocess.run([java_path, "-jar", client_jar_path], text=True)
+if run_client: subprocess.run([java_path, "-jar", client_jar_path] + passthrough_args, text=True)
 
 # Wait for them to all die.
 # TODO: neat key thing to see each process' output by pressing "1", or "2", etc. Won't support scrolling though

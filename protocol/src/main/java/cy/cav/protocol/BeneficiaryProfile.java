@@ -2,6 +2,7 @@ package cy.cav.protocol;
 
 import java.math.*;
 import java.time.*;
+import java.util.*;
 
 public record BeneficiaryProfile(String beneficiaryNumber,
                                  String firstName,

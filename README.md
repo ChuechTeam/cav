@@ -12,15 +12,11 @@
   - Créer de nouvelles aides (pas forcément réaliste, on met ce qu'on veut, plus c'est bidon mieux c'est)
   - Modifier son profil en tant qu'allocataire
     - Attention à bien recalculer toutes les previsions d'allocations !!
-  - Paiement des aides et passage au mois suivant
-    - Acteur `PaymentProcess` à spawn
-    - Historique de paiement contenu dans chaque allocataire
-  - Possibilité d'avoir plusieurs services
-    - Service PRÉFECTURE (`PREFECTURE`)
-    - Service CALCUL (`CALCULATOR`)
-      - Le service préfecture va devoir chercher les services calcul disponibles
 - **Côté API client :**
-  - Faire les API pour ce que le service proposera en plus
+  - Possibilité de choisir quelle préfecture utiliser pour créer un compte
+  - Récupérer l'état d'une préfecture (mois actuel)
+  - Passer au mois suivant pour une préfecture
+  - Modifier le profil d'un allocataire (faire service avant)
 - **Côté frontend :**
   - Faire l'unique page du site où on peut :
     - Créer un compte ou se connecter (pas besoin de mdp, juste l'adresse de l'acteur)
@@ -38,7 +34,11 @@
 Windows : `python ./run.py discovery service`
 
 Linux : `./run.py discovery service`
-[AccountController.java](client/src/main/java/cy/cav/client/controller/AccountController.java)
+
+Si vous voulez lancer le service mais qu'il ne contienne :
+- que des acteurs préfectures : `--prefecture-only` ou `-p`
+- que des acteurs calculateurs : `--calculators-only` ou `-c`
+
 ### Lancer le client (API REST)
 
 Windows : `python ./run.py client`

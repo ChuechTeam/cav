@@ -23,6 +23,7 @@ public class Beneficiary {
     private String iban;                   // IBAN for payments
     private String beneficiaryNumber;      // Beneficiary number (auto-generated)
     private LocalDate registrationDate;   // Registration date
+    private final List<Payment> payments = new ArrayList<>();
 
     // Default constructor
     public Beneficiary() {
@@ -145,6 +146,10 @@ public class Beneficiary {
 
     public void setRegistrationDate(LocalDate registrationDate) {
         this.registrationDate = registrationDate;
+    }
+
+    public List<Payment> getPayments() {
+        return payments;
     }
 
     public BeneficiaryProfile toProfile() {

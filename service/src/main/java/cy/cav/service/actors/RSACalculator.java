@@ -1,4 +1,4 @@
-package cy.cav.service.actors.calculateurs;
+package cy.cav.service.actors;
 
 import cy.cav.framework.*;
 import cy.cav.framework.reliable.*;
@@ -23,7 +23,7 @@ public class RSACalculator extends Actor {
     static final Router<RSACalculator> router = new Router<RSACalculator>()
             .route(CalculateAllowance.class, RSACalculator::calculateRSA);
 
-    private final AckStore<AllowanceCalculated> ackStore = new AckStore<>(this);
+    private final AckStore<CalculateAllowance.Ack> ackStore = new AckStore<>(this);
 
     public RSACalculator(ActorInit init) {
         super(init);
@@ -46,15 +46,15 @@ public class RSACalculator extends Actor {
         // Check eligibility using request data (vérification d'éligibilité simplifiée)
         boolean eligible = checkEligibility(request);
 
-        AllowanceCalculated message;
+        CalculateAllowance.Ack message;
         if (eligible) {
             BigDecimal calculatedAmount = calculateRSAAmount(request);
 
             log.info("RSA amount calculated: {}€ for beneficiary: {}", calculatedAmount, request.profile());
-            message = new AllowanceCalculated(AllowanceType.RSA, calculatedAmount, "", request.ackId());
+            message = new CalculateAllowance.Ack(AllowanceType.RSA, calculatedAmount, "", request.ackId());
         } else {
             log.info("RSA request rejected for beneficiary: {}", request);
-            message = new AllowanceCalculated(AllowanceType.RSA, BigDecimal.ZERO,
+            message = new CalculateAllowance.Ack(AllowanceType.RSA, BigDecimal.ZERO,
                     "Vous n'êtes pas éligible au RSA. C'est dommage !", request.ackId());
         }
 

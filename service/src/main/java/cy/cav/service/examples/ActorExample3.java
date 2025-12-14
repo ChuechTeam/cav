@@ -1,4 +1,4 @@
-package cy.cav.service;
+package cy.cav.service.examples;
 
 import cy.cav.framework.*;
 import cy.cav.framework.reliable.*;

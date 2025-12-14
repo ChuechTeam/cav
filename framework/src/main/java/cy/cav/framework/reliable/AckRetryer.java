@@ -2,6 +2,7 @@ package cy.cav.framework.reliable;
 
 import cy.cav.framework.*;
 import cy.cav.framework.Timer;
+import jakarta.annotation.*;
 
 import java.time.*;
 import java.util.*;
@@ -25,7 +26,7 @@ public class AckRetryer {
     ///
     /// @param actor         the actor who's going to send messages
     /// @param delayFunction a function that takes in the number of retries (starts by one) and returns a delay,
-    ///                       a negative value will stop retrying this message forever
+    ///                                            a negative value will stop retrying this message forever
     /// @param maxRetries    the maximum number of retries before giving up (at least 1 retry will be done regardless)
     public AckRetryer(Actor actor, DelayFunction delayFunction, int maxRetries) {
         this.actor = actor;
@@ -45,16 +46,24 @@ public class AckRetryer {
 
     /// Sends a message to an actor, trying to send it over and over until the actor responds with an acknowledgment.
     public <T extends Message.Notification & Acknowledgeable> void send(ActorAddress receiver, T message) {
+        send(_ -> receiver, message);
+    }
+
+    /// Sends a message to an actor, trying to send it over and over until the actor responds with an acknowledgment.
+    public <T extends Message.Notification & Acknowledgeable> void send(ActorFunction receiverFunction, T message) {
         if (pendingMessages.containsKey(message.ackId())) {
             throw new IllegalStateException("Message with id " + message.ackId() + " is already pending!");
         }
 
         // Save the pending message. (retryCount = 1 since we're going to send the message once)
-        PendingMessage<T> pendingMessage = new PendingMessage<>(message, receiver, 1);
+        PendingMessage<T> pendingMessage = new PendingMessage<>(message, receiverFunction, 1);
         pendingMessages.put(message.ackId(), pendingMessage);
 
         // Send a first attempt.
-        actor.send(receiver, message);
+        ActorAddress receiver = receiverFunction.choose(0);
+        if (receiver != null) {
+            actor.send(receiver, message);
+        }
 
         // Schedule the retry.
         Duration delay = delayFunction.compute(pendingMessage.retryCount);
@@ -63,17 +72,27 @@ public class AckRetryer {
 
     /// After a while, sends a message to an actor, trying to send it over and over
     /// until the actor responds with an acknowledgment.
-    public <T extends Message.Notification & Acknowledgeable> void sendDelayed(ActorAddress address, T message, Duration initialDelay) {
+    public <T extends Message.Notification & Acknowledgeable> void sendDelayed(ActorAddress receiver, T message, Duration initialDelay) {
+        sendDelayed(_ -> receiver, message, initialDelay);
+    }
+
+    /// After a while, sends a message to an actor, trying to send it over and over
+    /// until the actor responds with an acknowledgment.
+    public <T extends Message.Notification & Acknowledgeable> void sendDelayed(ActorFunction receiverFunction, T message, Duration initialDelay) {
         if (pendingMessages.containsKey(message.ackId())) {
             throw new IllegalStateException("Message with id " + message.ackId() + " is already pending!");
         }
 
         // Save the pending message. (retryCount = 0 since we're not going to send the message yet)
-        PendingMessage<T> pendingMessage = new PendingMessage<>(message, address, 0);
+        PendingMessage<T> pendingMessage = new PendingMessage<>(message, receiverFunction, 0);
         pendingMessages.put(message.ackId(), pendingMessage);
 
         // Schedule the retry with the same duration as the initial delay.
         pendingMessage.retryTimer = actor.sendDelayed(actor.address(), new RetrySend(message.ackId()), initialDelay);
+    }
+
+    public void giveUp(UUID ackId) {
+        pendingMessages.remove(ackId);
     }
 
     /// Processes incoming acknowledgments and retries.
@@ -96,7 +115,10 @@ public class AckRetryer {
             }
 
             // Send the message again
-            actor.send(pendingMessage.receiver, pendingMessage.message);
+            ActorAddress receiver = pendingMessage.receiverFunction.choose(pendingMessage.retryCount);
+            if (receiver != null) {
+                actor.send(receiver, pendingMessage.message);
+            }
 
             // When we have too much retries, give up.
             pendingMessage.retryCount++;
@@ -122,13 +144,13 @@ public class AckRetryer {
 
     private static class PendingMessage<T extends Message.Notification & Acknowledgeable> {
         T message;
-        ActorAddress receiver;
+        ActorFunction receiverFunction;
         int retryCount;
         Timer retryTimer;
 
-        public PendingMessage(T message, ActorAddress receiver, int retryCount) {
+        public PendingMessage(T message, ActorFunction receiverFunction, int retryCount) {
             this.message = message;
-            this.receiver = receiver;
+            this.receiverFunction = receiverFunction;
             this.retryCount = retryCount;
         }
     }
@@ -145,5 +167,11 @@ public class AckRetryer {
         /// @param retryCount the number of this retry attempt (starts by 1)
         /// @return how much time to wait; negative means stop retrying
         Duration compute(int retryCount);
+    }
+
+    @FunctionalInterface
+    public interface ActorFunction {
+        @Nullable
+        ActorAddress choose(int retryCount);
     }
 }
