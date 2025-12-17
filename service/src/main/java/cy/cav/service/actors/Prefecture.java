@@ -41,7 +41,7 @@ public class Prefecture extends Actor {
 
     private LocalDate currentMonth = LocalDate.now().withDayOfMonth(1);
 
-    private final AckRetryer retryer = AckRetryer.constantDelay(this, Duration.ofSeconds(15));
+    private final AckRetryer retryer = AckRetryer.constantDelay(this, Duration.ofSeconds(15)).maxRetries(10000);
 
     static final Router<Prefecture> router = new Router<Prefecture>()
             .route(CreateAccountRequest.class, Prefecture::createAccount)

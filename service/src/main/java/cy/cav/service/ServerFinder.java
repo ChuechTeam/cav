@@ -7,6 +7,7 @@ import org.springframework.stereotype.*;
 
 import java.util.*;
 
+/// Finds a compatible server on the network when needing some specific actor.
 @Component
 public class ServerFinder {
     private final Network network;
@@ -19,6 +20,8 @@ public class ServerFinder {
         this.random = new Random();
     }
 
+    /// Finds a random server on the network that has calculator actors. When this server already supports calculators,
+    /// returns this server.
     public @Nullable Server pickCalculatorServer() {
         // If this server already supports calculators, good!
         if (Boolean.parseBoolean(server.metadata().getOrDefault("supportsCalculators", ""))) {
@@ -38,6 +41,9 @@ public class ServerFinder {
         return calcServers.get(random.nextInt(calcServers.size()));
     }
 
+    /// Finds a random server on the network that has calculator actors
+    /// and makes an actor address for the calculator of the allowance type.
+    /// When this server already supports calculators, returns this server.
     public @Nullable ActorAddress pickCalculatorActor(AllowanceType type) {
         Server calcServ = pickCalculatorServer();
         if (calcServ == null) {

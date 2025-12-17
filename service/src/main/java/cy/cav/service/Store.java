@@ -15,6 +15,7 @@ public class Store {
     // Stores for different entities
     private final Map<UUID, Beneficiary> beneficiaries = new ConcurrentHashMap<>();
 
+    /// Returns all beneficiaries by their UUID
     public Map<UUID, Beneficiary> beneficiaries() { return beneficiaries; }
 }
 

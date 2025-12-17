@@ -38,12 +38,16 @@ public class Framework {
     @ConditionalOnMissingBean
     Server server(Environment environment, FrameworkConfig config, List<MetadataInit> metadataInits) {
         long id;
-        try {
-            // Pick a random server id using cryptographically secure randomness.
-            // It is used for registration with the Eureka server.
-            id = SecureRandom.getInstanceStrong().nextLong();
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException("SecureRandom isn't supported; cannot generate server id.", e);
+        if (config.serverId() != null) {
+            id = HexFormat.fromHexDigitsToLong(config.serverId());
+        } else {
+            try {
+                // Pick a random server id using cryptographically secure randomness.
+                // It is used for registration with the Eureka server.
+                id = SecureRandom.getInstanceStrong().nextLong();
+            } catch (NoSuchAlgorithmException e) {
+                throw new RuntimeException("SecureRandom isn't supported; cannot generate server id.", e);
+            }
         }
 
         // Customize metadata according to MetadataInits

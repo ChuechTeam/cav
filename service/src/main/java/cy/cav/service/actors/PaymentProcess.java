@@ -23,7 +23,8 @@ public class PaymentProcess extends Actor {
 
     private final List<Payment> paymentsToDistribute = new ArrayList<>();
 
-    private final AckRetryer retryer = AckRetryer.constantDelay(this, Duration.ofSeconds(5));
+    private final AckRetryer retryer = AckRetryer.constantDelay(this, Duration.ofSeconds(5)).maxRetries(10000);
+
     private final int totalAllowances;
 
     protected PaymentProcess(ActorInit init,

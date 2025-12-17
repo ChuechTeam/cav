@@ -12,14 +12,14 @@ public class AckRetryer {
     private final Map<UUID, PendingMessage<?>> pendingMessages = new HashMap<>();
     private final Actor actor;
     private final DelayFunction delayFunction;
-    private final int maxRetries;
+    private int maxRetries;
 
-    /// Creates an [AckRetryer] with the given delay function and a default max retry count of 20.
+    /// Creates an [AckRetryer] with the given delay function and a default max retry count of 100.
     ///
     /// @param actor         the actor who's going to send messages
     /// @param delayFunction a function that takes in the number of retries (starts by one) and returns a delay
     public AckRetryer(Actor actor, DelayFunction delayFunction) {
-        this(actor, delayFunction, 20);
+        this(actor, delayFunction, 100);
     }
 
     /// Creates an [AckRetryer] with the given delay function and a max retry count.
@@ -140,6 +140,11 @@ public class AckRetryer {
         }
 
         return false;
+    }
+
+    public AckRetryer maxRetries(int maxRetries) {
+        this.maxRetries = maxRetries;
+        return this;
     }
 
     private static class PendingMessage<T extends Message.Notification & Acknowledgeable> {

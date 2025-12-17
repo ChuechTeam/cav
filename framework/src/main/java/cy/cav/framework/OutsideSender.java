@@ -51,8 +51,10 @@ class OutsideSender {
     /// Sends the envelope destined to an outside actor on the network.
     ///
     /// May not succeed due to network errors.
-    public void send(Envelope<?> envelope) {
-        send(envelope, 0);
+    ///
+    /// @param retry true when it should retry over and over if the message fails to send
+    public void send(Envelope<?> envelope, boolean retry) {
+        send(envelope, retry ? 0 : Integer.MAX_VALUE);
     }
 
     private void send(Envelope<?> envelope, int attempt) {

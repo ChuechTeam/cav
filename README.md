@@ -24,9 +24,6 @@
     - Demander/Refuser une aide
     - Voir l'historique de paiement
     - Passer au mois suivant
-- **Côté framework :**
-  - Rendre `AckRetryer` un poil plus flexible (si un message est abandonné, pouvoir faire qqch)
-  - Pouvoir faire des requêtes sans réessayer l'envoi de message (au cas où le serveur n'existe juste pas)
 
 ## Pour lancer le projet
 

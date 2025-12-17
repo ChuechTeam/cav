@@ -4,8 +4,8 @@
 #
 # USAGE:
 # 
-# Windows: python run.py [modules...] [-p] [-c] -- args
-# Linux:   ./run.py [modules...] [-p] [-c] -- args
+# Windows: python run.py [modules...] [-p] [-c] [-s] -- args
+# Linux:   ./run.py [modules...] [-p] [-c] [-s] -- args
 #
 # Where modules is a list of modules you want to spawn, which can be either:
 # - client
@@ -25,6 +25,7 @@ import subprocess
 import sys
 import shutil
 import time
+import signal
 
 # Path stuff
 root_path = pathlib.Path(__file__).absolute().parent
@@ -47,6 +48,7 @@ run_discovery = False
 passthrough = False
 passthrough_args = []
 service_args = []
+skip_build = False
 for arg in sys.argv:
     if passthrough:
         passthrough_args.append(arg)
@@ -56,6 +58,7 @@ for arg in sys.argv:
     if arg == "client" or arg == "all": run_client = True
     if arg == "service" or arg == "all": run_service = True
     if arg == "discovery" or arg == "all": run_discovery = True
+    if arg == "--skip-build" or arg == "-s": skip_build = True
     if arg == "--prefecture-only" or arg == "-p": service_args.extend(["--cav.framework.metadata.supportsPrefecture=true", "--cav.framework.metadata.supportsCalculators=false"])
     if arg == "--calculators-only" or arg == "-c": service_args.extend(["--cav.framework.metadata.supportsPrefecture=false", "--cav.framework.metadata.supportsCalculators=true"])
 
@@ -64,11 +67,12 @@ if not run_client and not run_service and not run_discovery:
     sys.exit(1)
 
 # First off... package things up
-maven_result = subprocess.run([mvn_path, "-T", "1C", "package", "-DskipTests"], cwd=str(root_path))
+if not skip_build:
+    maven_result = subprocess.run([mvn_path, "-T", "1C", "package", "-DskipTests"], cwd=str(root_path))
 
-if maven_result.returncode != 0:
-    print("Failed to build the Maven project!", file=sys.stderr)
-    sys.exit(1)
+    if maven_result.returncode != 0:
+        print("Failed to build the Maven project!", file=sys.stderr)
+        sys.exit(1)
     
 # Spawn the services
 alive_procs = []
@@ -91,7 +95,11 @@ while len(alive_procs) > 0:
                 alive_procs.pop(i)
     except KeyboardInterrupt:
         for name, proc in alive_procs:
-            proc.terminate()
+            if os.name == "nt":
+                # Otherwise it kills the process without graceful shutdown
+                p.send_signal(signal.CTRL_C_EVENT)
+            else:
+                proc.terminate()
 
 sys.stdout.flush()
 sys.stderr.flush()

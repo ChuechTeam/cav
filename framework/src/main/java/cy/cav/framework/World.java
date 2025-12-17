@@ -260,7 +260,7 @@ public class World implements SmartLifecycle {
         // Put the message in an envelope, so the postman "knows" which actor to send the message to.
         sender = sender != null ? sender : server.address();
         var envelope = new Envelope<>(sender, receiver, 0, body, Instant.now());
-        sendEnvelope(envelope);
+        sendEnvelope(envelope, true);
     }
 
     /// Sends a **request** to an actor and **doesn't care about its response**.
@@ -274,7 +274,7 @@ public class World implements SmartLifecycle {
         // Put the message in an envelope, so the postman "knows" which actor to send the message to.
         sender = sender != null ? sender : server.address();
         var envelope = new Envelope<>(sender, receiver, 0, body, Instant.now());
-        sendEnvelope(envelope);
+        sendEnvelope(envelope, true);
     }
 
     /// Sends a **request** to an actor, **waiting for its response** in a [CompletionStage].
@@ -298,6 +298,32 @@ public class World implements SmartLifecycle {
     public <T extends Message.Response> CompletionStage<T> query(@Nullable ActorAddress sender,
                                                                  ActorAddress receiver,
                                                                  Message.Request<T> body) {
+        return query(sender, receiver, body, true);
+    }
+
+    /// Sends a **request** to an actor, **waiting for its response** in a [CompletionStage].
+    ///
+    /// The [CompletionStage] will be complete:
+    /// - successfully, when the receiver responds to this request
+    /// - unsuccessfully, when the receiver takes too long to respond (30 seconds) or doesn't know how to handle the request (TODO)
+    ///
+    /// The [CompletionStage] will always complete on the World main loop thread.
+    ///
+    /// The [CompletionStage] will NEVER complete if the sender actor is dead once the request ends. Note that this
+    /// applies only if the sender address is given and has the same server id as this world's server.
+    ///
+    /// Requests are NOT guaranteed to be sent to the destination actor.
+    ///
+    /// @param sender   the actor that sent the message; can be null
+    /// @param receiver the id of the actor to send the message to
+    /// @param body     the body of the message
+    /// @param retry    whether to retry sending the message on network errors
+    /// @return a [CompletionStage] which will complete successfully once the actor responds properly, or with a failure
+    ///         when the actor fails to respond after a certain amount of time
+    public <T extends Message.Response> CompletionStage<T> query(@Nullable ActorAddress sender,
+                                                                 ActorAddress receiver,
+                                                                 Message.Request<T> body,
+                                                                 boolean retry) {
         // Create a future for this request, which will complete once we receive the response.
         // TODO: Configurable timeout
         var future = new CompletableFuture<T>();
@@ -308,7 +334,7 @@ public class World implements SmartLifecycle {
         // Put the message in an envelope, so the postman "knows" which actor to send the message to.
         sender = sender != null ? sender : server.address();
         var envelope = new Envelope<>(sender, receiver, requestId, body, Instant.now());
-        sendEnvelope(envelope);
+        sendEnvelope(envelope, retry);
 
         // Return the future we've created earlier.
         return future;
@@ -320,13 +346,15 @@ public class World implements SmartLifecycle {
     ///
     /// Requests are NOT guaranteed to be sent to the destination actor.
     ///
+    /// Doesn't retry on network errors for fast API feedback.
+    ///
     /// @param receiver the id of the actor to send the message to
     /// @param body     the body of the message
     /// @throws ActorNotFoundException when the receiver actor does not exist
     public <T extends Message.Response> T querySync(ActorAddress receiver, Message.Request<T> body)
             throws ActorNotFoundException {
         try {
-            return query(null, receiver, body)
+            return query(null, receiver, body, false)
                     .toCompletableFuture()
                     .get();
         } catch (InterruptedException e) {
@@ -359,11 +387,11 @@ public class World implements SmartLifecycle {
 
         // Put the message in an envelope, so the postman "knows" which actor to send the message to.
         var newEnv = new Envelope<>(responder, envelope.sender(), envelope.requestId(), body, Instant.now());
-        sendEnvelope(newEnv);
+        sendEnvelope(newEnv, true);
     }
 
     /// Used internally to send an envelope either to this world or to the network.
-    private void sendEnvelope(Envelope<?> envelope) {
+    private void sendEnvelope(Envelope<?> envelope, boolean retry) {
         if (envelope.receiver().serverId() == server.id()) {
             // The actor we want to send the message to is in this world!
             // Just add the envelope to our local queue.
@@ -371,7 +399,7 @@ public class World implements SmartLifecycle {
             log.debug("Sent envelope {} to this world's mailbox", envelope);
         } else {
             // The message is destined to another server. Send it on the network!
-            outsideSender.send(envelope);
+            outsideSender.send(envelope, retry);
         }
     }
 
