@@ -60,7 +60,7 @@ public class Prefecture extends Actor {
     protected void spawned() {
         // Make some default actors
         for (Beneficiary beneficiary : defaultBeneficiaries.getDefaultBeneficiaries()) {
-            ActorAddress actorAddress = world.spawn(init -> new BeneficiaryActor(init, currentMonth, beneficiary, store, serverFinder));
+            ActorAddress actorAddress = world.spawn(init -> new BeneficiaryActor(init, currentMonth, beneficiary, serverFinder));
             beneficiaryActors.put(beneficiary.getId(), actorAddress);
 
             send(actorAddress, new RequestAllowanceRequest(AllowanceType.RSA));
@@ -88,29 +88,20 @@ public class Prefecture extends Actor {
                 request.lastName(),
                 request.birthDate(),
                 request.email(),
+                request.phoneNumber(),
+                request.address(),
                 request.inCouple(),
-                request.numberOfDependents()
+                request.numberOfDependents(),
+                request.monthlyIncome(),
+                request.iban(),
+                LocalDate.now()
         );
 
-        beneficiary.setPhoneNumber(request.phoneNumber());
-        beneficiary.setAddress(request.address());
-        beneficiary.setMonthlyIncome(request.monthlyIncome());
-        beneficiary.setIban(request.iban());
-
-        // Generate beneficiary number and registration date
-        LocalDate registrationDate = LocalDate.now();
-        String beneficiaryNumber = generateBeneficiaryNumber();
-        beneficiary.setBeneficiaryNumber(beneficiaryNumber);
-        beneficiary.setRegistrationDate(registrationDate);
-
         // Spawn a new BeneficiaryActor for this beneficiary
-        ActorAddress actorAddress = world.spawn(init -> new BeneficiaryActor(init, currentMonth, beneficiary, store, serverFinder));
+        ActorAddress actorAddress = world.spawn(init -> new BeneficiaryActor(init, currentMonth, beneficiary, serverFinder));
         beneficiaryActors.put(beneficiary.getId(), actorAddress);
 
-        log.info("BeneficiaryActor spawned for {} (ID: {}, Actor: {})",
-                beneficiaryNumber, beneficiary.getId(), actorAddress);
-
-        log.info("Account created: {} (ID: {})", beneficiaryNumber, beneficiary.getId());
+        log.info("BeneficiaryActor spawned (ID: {}, Actor: {})", beneficiary.getId(), actorAddress);
 
         return new CreateAccountResponse(
                 beneficiary.getId(),

@@ -21,26 +21,22 @@ public class Beneficiary {
     private int numberOfDependents;        // Number of dependents
     private BigDecimal monthlyIncome;           // Monthly income
     private String iban;                   // IBAN for payments
-    private String beneficiaryNumber;      // Beneficiary number (auto-generated)
     private LocalDate registrationDate;   // Registration date
     private final List<Payment> payments = new ArrayList<>();
 
-    // Default constructor
-    public Beneficiary() {
+    public Beneficiary(String firstName, String lastName, LocalDate birthDate, String email, String phoneNumber, String address, boolean inCouple, int numberOfDependents, BigDecimal monthlyIncome, String iban, LocalDate registrationDate) {
         this.id = UUID.randomUUID();
-    }
-
-    // Constructor with essential parameters
-    public Beneficiary(String firstName, String lastName, LocalDate birthDate,
-                       String email, boolean inCouple, int numberOfDependents) {
-        this();
         this.firstName = firstName;
         this.lastName = lastName;
         this.birthDate = birthDate;
         this.email = email;
+        this.phoneNumber = phoneNumber;
+        this.address = address;
         this.inCouple = inCouple;
         this.numberOfDependents = numberOfDependents;
-        this.monthlyIncome = BigDecimal.ZERO;
+        this.monthlyIncome = monthlyIncome;
+        this.iban = iban;
+        this.registrationDate = registrationDate;
     }
 
     // Getters and Setters
@@ -132,14 +128,6 @@ public class Beneficiary {
         this.iban = iban;
     }
 
-    public String getBeneficiaryNumber() {
-        return beneficiaryNumber;
-    }
-
-    public void setBeneficiaryNumber(String beneficiaryNumber) {
-        this.beneficiaryNumber = beneficiaryNumber;
-    }
-
     public LocalDate getRegistrationDate() {
         return registrationDate;
     }
@@ -154,7 +142,6 @@ public class Beneficiary {
 
     public BeneficiaryProfile toProfile() {
         return new BeneficiaryProfile(
-                beneficiaryNumber,
                 firstName,
                 lastName,
                 birthDate,

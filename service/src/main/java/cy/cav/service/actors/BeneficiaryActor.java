@@ -32,7 +32,6 @@ public class BeneficiaryActor extends Actor {
     private final Beneficiary beneficiary;
 
     // Store for persistence (UI display)
-    private final Store store;
     private final ServerFinder serverFinder;
 
     /// Allowances that are wanted by the beneficiary, with their previsions.
@@ -54,34 +53,15 @@ public class BeneficiaryActor extends Actor {
             .route(PayAllowances.class, BeneficiaryActor::payAllowances)
             .route(ReceivePayments.class, BeneficiaryActor::receivePayments);
 
-    public BeneficiaryActor(ActorInit init, LocalDate currentMonth, Beneficiary beneficiary, Store store, ServerFinder serverFinder) {
+    public BeneficiaryActor(ActorInit init, LocalDate currentMonth, Beneficiary beneficiary, ServerFinder serverFinder) {
         super(init);
         // Initialize all prevision types with default previsions.
         for (AllowanceType type : AllowanceType.values()) {
             allowancePrevisions.put(type, new AllowancePrevision(type));
         }
         this.beneficiary = beneficiary;
-        this.store = store;
         this.currentMonth = currentMonth;
         this.serverFinder = serverFinder;
-    }
-
-    @Override
-    protected void spawned() {
-        // Ensure beneficiary number and registration date are set
-        String beneficiaryNumber = beneficiary.getBeneficiaryNumber();
-        if (beneficiaryNumber == null) {
-            beneficiaryNumber = generateBeneficiaryNumberFor(beneficiary);
-            beneficiary.setBeneficiaryNumber(beneficiaryNumber);
-        }
-
-        LocalDate registrationDate = beneficiary.getRegistrationDate();
-        if (registrationDate == null) {
-            registrationDate = LocalDate.now();
-            beneficiary.setRegistrationDate(registrationDate);
-        }
-
-        store.beneficiaries().put(beneficiary.getId(), beneficiary);
     }
 
     @Override
@@ -186,15 +166,6 @@ public class BeneficiaryActor extends Actor {
 
         log.info("Received {} payments from actor {}", message.payments().size(), envelope.sender());
         paymentAckStore.send(envelope.sender(), new ReceivePayments.Ack(message.ackId()));
-    }
-
-    /**
-     * Generates beneficiary number for an existing beneficiary (deterministic).
-     */
-    private String generateBeneficiaryNumberFor(Beneficiary beneficiary) {
-        // For existing beneficiaries, use a deterministic approach based on ID
-        String idStr = beneficiary.getId().toString().replace("-", "");
-        return "CAV" + idStr.substring(0, Math.min(11, idStr.length()));
     }
 }
 

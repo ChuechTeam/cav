@@ -65,7 +65,9 @@ public abstract class Supervisor {
         /// Stop processing the actor's messages and send any [stashed messages][Supervisor#stash].
         DETACH,
         /// Keep processing the actor's messages.
-        STAY_ATTACHED
+        STAY_ATTACHED,
+        /// Despawn the actor entirely.
+        DESPAWN
     }
 
     /// Logs message processing failures and continues as if nothing happened.

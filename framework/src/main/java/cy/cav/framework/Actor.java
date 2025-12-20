@@ -49,10 +49,7 @@ public abstract class Actor {
 
     /// Called by [World] only.
     void reportSpawned(@Nullable Supervisor supervisor) {
-        if (supervisor != null) {
-            this.supervisor = supervisor;
-        }
-
+        this.supervisor = supervisor;
         state = ActorState.ALIVE;
         spawned();
     }
@@ -192,11 +189,12 @@ public abstract class Actor {
             case SUPERVISED -> {
                 Supervisor.ProcessAction whatToDo = supervisor.process(envelope);
                 switch (whatToDo) {
-                    case Supervisor.ProcessAction.STAY_ATTACHED -> { }
-                    case Supervisor.ProcessAction.DETACH -> {
+                    case STAY_ATTACHED -> { }
+                    case DETACH -> {
                         state = ActorState.ALIVE;
                         supervisor.flushStash();
                     }
+                    case DESPAWN -> despawn();
                 }
             }
             case DETACHED -> throw new IllegalStateException("Can't accept envelope while detached!");
