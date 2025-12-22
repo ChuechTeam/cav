@@ -50,10 +50,7 @@ function CreateAccountForm({ onAccountCreated, onCancel }) {
 
       if (response.ok) {
         const data = await response.json();
-        // L'API retourne { beneficiaryAddress: { serverId, actorNumber } }
-        const addr = data.beneficiaryAddress;
-        const addressStr = `${addr.serverId}:${addr.actorNumber}`;
-        onAccountCreated(addressStr);
+        onAccountCreated(data.beneficiaryAddress);
       } else {
         const errorData = await response.text();
         setError(

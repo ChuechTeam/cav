@@ -15,7 +15,7 @@ function LoginForm({ onLogin, onShowCreateAccount }) {
     }
 
     // Valider le format de l'adresse (serverId:actorNumber)
-    if (!/^\d+:\d+$/.test(address.trim())) {
+    if (!/^[0-9a-f]+:[0-9a-f]+$/.test(address.trim())) {
       setError(
         "Format d'adresse invalide. Utilisez le format serverId:actorNumber (ex: 1:100)"
       );
