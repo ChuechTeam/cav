@@ -78,8 +78,7 @@ if not skip_build:
 alive_procs = []
 if run_discovery: alive_procs.append(("Discovery", subprocess.Popen([java_path, "-jar", discovery_jar_path] + passthrough_args, text=True)))
 if run_service: alive_procs.append(("Service", subprocess.Popen([java_path, "-jar", service_jar_path] + service_args + passthrough_args, text=True)))
-# here we use run to redirect stdin properly else it's a nightmare honestly
-if run_client: subprocess.run([java_path, "-jar", client_jar_path] + passthrough_args, text=True)
+if run_client: alive_procs.append(("Client", subprocess.Popen([java_path, "-jar", client_jar_path] + passthrough_args, text=True)))
 
 # Wait for them to all die.
 # TODO: neat key thing to see each process' output by pressing "1", or "2", etc. Won't support scrolling though
