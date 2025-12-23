@@ -25,10 +25,17 @@ function LoginForm({ onLogin, onShowCreateAccount }) {
     setLoading(true);
 
     try {
-      // Vérifier que le compte existe en appelant l'API
+      // Vérifier que le compte existe en appelant l'API (avec timeout)
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s timeout
+
       const response = await fetch(
-        `http://localhost:4444/api/accounts/${address.trim()}`
+        `http://localhost:4444/api/accounts/${address.trim()}`,
+        { signal: controller.signal }
       );
+      clearTimeout(timeoutId);
+
+      console.log("Response status:", response.status);
 
       if (response.ok) {
         onLogin(address.trim());
@@ -37,13 +44,19 @@ function LoginForm({ onLogin, onShowCreateAccount }) {
           "Compte non trouvé. Vérifiez l'adresse ou créez un nouveau compte."
         );
       } else {
-        setError("Erreur lors de la connexion. Réessayez.");
+        setError(`Erreur ${response.status} lors de la connexion. Réessayez.`);
       }
     } catch (err) {
-      setError(
-        "Impossible de contacter le serveur. Vérifiez que le service est lancé."
-      );
-      console.error("Erreur:", err);
+      console.error("Erreur fetch:", err);
+      if (err.name === "AbortError") {
+        setError(
+          "Timeout : le serveur ne répond pas. Vérifiez que le backend est lancé (python run.py all)."
+        );
+      } else {
+        setError(
+          "Impossible de contacter le serveur. Vérifiez que le service est lancé."
+        );
+      }
     } finally {
       setLoading(false);
     }
