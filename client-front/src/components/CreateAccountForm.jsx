@@ -11,6 +11,7 @@ function CreateAccountForm({ onAccountCreated, onCancel }) {
     email: "",
     phoneNumber: "",
     address: "",
+    hasHousing: false,
     inCouple: false,
     numberOfDependents: 0,
     monthlyIncome: "",
@@ -163,6 +164,23 @@ function CreateAccountForm({ onAccountCreated, onCancel }) {
             className="w-full px-3 py-2 text-white border rounded bg-zinc-700 border-zinc-600 focus:outline-none focus:border-blue-500"
             disabled={loading}
           />
+        </div>
+        {/* Maison ?  */}
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              name="hasHousing"
+              id="hasHousing"
+              checked={formData.hasHousing}
+              onChange={handleChange}
+              className="w-4 h-4 rounded bg-zinc-700 border-zinc-600"
+              disabled={loading}
+            />
+            <label htmlFor="hasHousing" className="text-sm text-zinc-300">
+              A une maison
+            </label>
+          </div>
         </div>
 
         {/* Situation */}

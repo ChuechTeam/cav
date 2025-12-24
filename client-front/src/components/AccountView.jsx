@@ -171,6 +171,12 @@ function AccountView({ actorAddress, onLogout }) {
           <div>
             <span className="text-zinc-500">Situation</span>
             <p className="text-white">
+              {profile.hasHousing ? "A un logement" : "Est sans domicile fixe"}
+            </p>
+          </div>
+          <div>
+            <span className="text-zinc-500">Situation</span>
+            <p className="text-white">
               {profile.inCouple ? "En couple" : "Célibataire"}
             </p>
           </div>
