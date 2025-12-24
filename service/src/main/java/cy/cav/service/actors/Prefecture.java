@@ -45,7 +45,8 @@ public class Prefecture extends Actor {
 
     static final Router<Prefecture> router = new Router<Prefecture>()
             .route(CreateAccountRequest.class, Prefecture::createAccount)
-            .route(NextMonthRequest.class, Prefecture::nextMonth);
+            .route(NextMonthRequest.class, Prefecture::nextMonth)
+            .route(PrefectureStateRequest.class, Prefecture::getState);
 
     public Prefecture(ActorInit init, Store store,
                       DefaultBeneficiaries defaultBeneficiaries,
@@ -131,6 +132,10 @@ public class Prefecture extends Actor {
                 String.format("%02d", now.getMonthValue()) +
                 String.format("%02d", now.getDayOfMonth()) +
                 String.format("%03d", (int) (Math.random() * 1000));
+    }
+
+    private PrefectureStateResponse getState(PrefectureStateRequest request) {
+        return new PrefectureStateResponse(this.state().toString());
     }
 
 }
