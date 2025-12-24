@@ -1,10 +1,13 @@
 package cy.cav.service.domain;
 
-import cy.cav.protocol.*;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 
-import java.math.*;
-import java.time.*;
-import java.util.*;
+import cy.cav.protocol.BeneficiaryProfile;
+import cy.cav.protocol.Payment;
 
 /**
  * Represents a beneficiary (allocataire) of allowances.
@@ -17,6 +20,7 @@ public class Beneficiary {
     private String email;
     private String phoneNumber;
     private String address;
+    private boolean hasHousing;           // Whether the beneficiary has housing or not 
     private boolean inCouple;              // In couple or single
     private int numberOfDependents;        // Number of dependents
     private BigDecimal monthlyIncome;           // Monthly income
@@ -24,7 +28,7 @@ public class Beneficiary {
     private LocalDate registrationDate;   // Registration date
     private final List<Payment> payments = new ArrayList<>();
 
-    public Beneficiary(String firstName, String lastName, LocalDate birthDate, String email, String phoneNumber, String address, boolean inCouple, int numberOfDependents, BigDecimal monthlyIncome, String iban, LocalDate registrationDate) {
+    public Beneficiary(String firstName, String lastName, LocalDate birthDate, String email, String phoneNumber, String address, boolean hasHousing, boolean inCouple, int numberOfDependents, BigDecimal monthlyIncome, String iban, LocalDate registrationDate) {
         this.id = UUID.randomUUID();
         this.firstName = firstName;
         this.lastName = lastName;
@@ -32,6 +36,7 @@ public class Beneficiary {
         this.email = email;
         this.phoneNumber = phoneNumber;
         this.address = address;
+        this.hasHousing = hasHousing;
         this.inCouple = inCouple;
         this.numberOfDependents = numberOfDependents;
         this.monthlyIncome = monthlyIncome;
@@ -91,11 +96,17 @@ public class Beneficiary {
     public String getAddress() {
         return address;
     }
-
+    
     public void setAddress(String address) {
         this.address = address;
     }
 
+    public boolean isHasHousing() {
+        return hasHousing;
+    }
+    public void setHasHousing(boolean hasHousing) {
+        this.hasHousing = hasHousing;
+    }
     public boolean isInCouple() {
         return inCouple;
     }
@@ -148,6 +159,7 @@ public class Beneficiary {
                 email,
                 phoneNumber,
                 address,
+                hasHousing,
                 inCouple,
                 numberOfDependents,
                 monthlyIncome,

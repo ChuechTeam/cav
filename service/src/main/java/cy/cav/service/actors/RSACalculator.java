@@ -1,12 +1,17 @@
 package cy.cav.service.actors;
 
-import cy.cav.framework.*;
-import cy.cav.framework.reliable.*;
-import cy.cav.protocol.*;
-import cy.cav.protocol.allowances.*;
-import org.slf4j.*;
+import java.math.BigDecimal;
 
-import java.math.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import cy.cav.framework.Actor;
+import cy.cav.framework.ActorInit;
+import cy.cav.framework.Envelope;
+import cy.cav.framework.Router;
+import cy.cav.framework.reliable.AckStore;
+import cy.cav.protocol.AllowanceType;
+import cy.cav.protocol.allowances.CalculateAllowance;
 
 // Calculates RSA allocation amounts (calcule les montants d'allocation RSA)
 public class RSACalculator extends Actor {
@@ -73,11 +78,9 @@ public class RSACalculator extends Actor {
 
         // Check if calculated amount would be > 0 (quick check)
         BigDecimal quickAmount = BASE_AMOUNT_SINGLE.subtract(request.profile().monthlyIncome());
-        // TODO: Add "has housing" to profile!
-        if (request.profile().address() != null) {
+        if (request.profile().hasHousing() != false) {
             quickAmount = quickAmount.subtract(HOUSING_DEDUCTION_SINGLE);
         }
-
         // For now, accept if amount would be positive (simplified)
         // In production, would need proper age verification
         return quickAmount.compareTo(BigDecimal.ZERO) > 0;
@@ -100,8 +103,7 @@ public class RSACalculator extends Actor {
         BigDecimal amountAfterIncome = baseAmount.subtract(request.profile().monthlyIncome());
 
         // Subtract housing deduction if has housing
-        // TODO: Add "has housing" to profile!
-        if (request.profile().address() != null) {
+        if (request.profile().hasHousing() != false) {
             int householdSize = (request.profile().inCouple() ? 2 : 1) + request.profile().numberOfDependents();
             if (householdSize >= 3) {
                 amountAfterIncome = amountAfterIncome.subtract(HOUSING_DEDUCTION_FAMILY);

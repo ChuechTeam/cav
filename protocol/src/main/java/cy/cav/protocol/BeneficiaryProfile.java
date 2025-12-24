@@ -1,7 +1,7 @@
 package cy.cav.protocol;
 
-import java.math.*;
-import java.time.*;
+import java.math.BigDecimal;
+import java.time.LocalDate;
 
 public record BeneficiaryProfile(String firstName,
                                  String lastName,
@@ -9,6 +9,7 @@ public record BeneficiaryProfile(String firstName,
                                  String email,
                                  String phoneNumber,
                                  String address,
+                                 boolean hasHousing,
                                  boolean inCouple,
                                  int numberOfDependents,
                                  BigDecimal monthlyIncome,

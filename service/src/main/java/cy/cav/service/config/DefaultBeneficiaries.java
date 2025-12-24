@@ -1,11 +1,12 @@
 package cy.cav.service.config;
 
-import cy.cav.service.domain.Beneficiary;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.List;
+
 import org.springframework.stereotype.Component;
 
-import java.math.*;
-import java.time.LocalDate;
-import java.util.*;
+import cy.cav.service.domain.Beneficiary;
 
 /// Gives some test data
 @Component
@@ -19,6 +20,7 @@ public class DefaultBeneficiaries {
                 "jean.dupont@example.com",
                 "0612345678",
                 "12 Rue de la Paix, 75001 Paris",
+                false,  // Pas de logement
                 false,  // Célibataire
                 0,      // Pas de personnes à charge
                 BigDecimal.ZERO,
@@ -33,6 +35,7 @@ public class DefaultBeneficiaries {
                 "marie.martin@example.com",
                 "0698765432",
                 "45 Avenue des Champs, 69001 Lyon",
+                true,   // A un logement
                 true,   // En couple
                 2,      // 2 personnes à charge
                 BigDecimal.valueOf(500.0),  // Modest income
@@ -48,6 +51,7 @@ public class DefaultBeneficiaries {
                 "pierre.bernard@example.com",
                 "0654321098",
                 "78 Boulevard Saint-Michel, 33000 Bordeaux",
+                true,   // A un logement
                 false,  // Célibataire
                 1,      // 1 personne à charge
                 BigDecimal.valueOf(800.0),

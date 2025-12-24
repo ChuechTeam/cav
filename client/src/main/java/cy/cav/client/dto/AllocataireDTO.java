@@ -1,6 +1,6 @@
 package cy.cav.client.dto;
 
-import java.math.*;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 // DTO for creating an allocataire (création d'un allocataire)
@@ -11,6 +11,7 @@ public record AllocataireDTO(
     String email,
     String phoneNumber,
     String address,
+    boolean hasHousing,
     boolean inCouple,
     int numberOfDependents,
     BigDecimal monthlyIncome,

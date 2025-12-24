@@ -90,6 +90,7 @@ public class Prefecture extends Actor {
                 request.email(),
                 request.phoneNumber(),
                 request.address(),
+                request.hasHousing(),
                 request.inCouple(),
                 request.numberOfDependents(),
                 request.monthlyIncome(),

@@ -1,15 +1,32 @@
 package cy.cav.client.controller;
 
-import cy.cav.client.*;
-import cy.cav.client.dto.*;
-import cy.cav.framework.*;
-import cy.cav.protocol.*;
-import cy.cav.protocol.accounts.*;
-import org.slf4j.*;
-import org.springframework.http.*;
-import org.springframework.web.bind.annotation.*;
+import java.util.List;
+import java.util.Map;
 
-import java.util.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import cy.cav.client.ServiceAPI;
+import cy.cav.client.dto.AllocataireDTO;
+import cy.cav.framework.ActorAddress;
+import cy.cav.framework.ActorNotFoundException;
+import cy.cav.framework.World;
+import cy.cav.protocol.AllowancePrevision;
+import cy.cav.protocol.AllowanceType;
+import cy.cav.protocol.BeneficiaryProfile;
+import cy.cav.protocol.Payment;
+import cy.cav.protocol.accounts.CreateAccountRequest;
+import cy.cav.protocol.accounts.CreateAccountResponse;
+import cy.cav.protocol.accounts.GetAccountRequest;
+import cy.cav.protocol.accounts.GetAccountResponse;
 
 // REST controller for allocataire accounts (gestion des comptes allocataires)
 @RestController
@@ -36,6 +53,7 @@ public class AccountController {
                 dto.email(),
                 dto.phoneNumber(),
                 dto.address(),
+                dto.hasHousing(),
                 dto.inCouple(),
                 dto.numberOfDependents(),
                 dto.monthlyIncome(),
