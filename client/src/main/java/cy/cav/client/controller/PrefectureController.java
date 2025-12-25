@@ -9,8 +9,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
 @RestController
@@ -27,16 +25,20 @@ public class PrefectureController {
         this.network = network;
     }
 
-    // Finding prefecture address
+    // Research the address of our prefecture
     private ActorAddress resolvePrefectureAddress(Long targetServerId) {
         if (!network.servers().containsKey(targetServerId)) {
             throw new RuntimeException("Serveur introuvable !");
+        }
+        // Verify if it is a prefecture
+        if (!"true".equalsIgnoreCase(network.servers().get(targetServerId).metadata().get("supportsPrefecture"))) {
+            throw new RuntimeException("Ce serveur n'est pas une préfecture !");
         }
 
         return new ActorAddress(targetServerId, KnownActors.PREFECTURE);
     }
 
-    // listing of prefectures
+    // Listing of prefectures
     @GetMapping
     public List<PrefectureInfo> listPrefectures() {
         return network.servers().values().stream()
@@ -48,26 +50,24 @@ public class PrefectureController {
                 .collect(Collectors.toList());
     }
 
-    // get state of a prefecture
+    // Getting the state (name + current month of a prefecture)
     @GetMapping("/{id}/state")
-    public ResponseEntity<String> getPrefectureState(@PathVariable Long id) {
+    public ResponseEntity<PrefectureStateResponse> getPrefectureState(@PathVariable Long id) {
         try {
             ActorAddress target = resolvePrefectureAddress(id);
 
-            PrefectureStateResponse response = world.<PrefectureStateResponse>query(null, target, new PrefectureStateRequest())
-                    .toCompletableFuture()
-                    .get(5, TimeUnit.SECONDS);
+            // Use of query Sync directly
+            PrefectureStateResponse response = world.querySync(target, new PrefectureStateRequest());
 
-            return ResponseEntity.ok(response.toString());
+            return ResponseEntity.ok(response);
 
-        } catch (TimeoutException e) {
-            return ResponseEntity.ok("UNREACHABLE");
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().body("Error: " + e.getMessage());
+            // querySync return ActorNotFoundException
+            return ResponseEntity.internalServerError().build();
         }
     }
 
-    // Create an account in a specified prefecture
+    // 3. Créer un compte - Version simplifiée avec querySync
     @PostMapping("/{id}/accounts")
     public ResponseEntity<CreateAccountResponse> createAccount(
             @PathVariable Long id,
@@ -76,9 +76,8 @@ public class PrefectureController {
         try {
             ActorAddress target = resolvePrefectureAddress(id);
 
-            CreateAccountResponse response = world.<CreateAccountResponse>query(null, target, request)
-                    .toCompletableFuture()
-                    .get(10, TimeUnit.SECONDS);
+            // Use of querySync
+            CreateAccountResponse response = world.querySync(target, request);
 
             return ResponseEntity.ok(response);
         } catch (Exception e) {

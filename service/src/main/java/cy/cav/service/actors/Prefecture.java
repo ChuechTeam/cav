@@ -135,7 +135,9 @@ public class Prefecture extends Actor {
     }
 
     private PrefectureStateResponse getState(PrefectureStateRequest request) {
-        return new PrefectureStateResponse(this.state().toString());
+        return new PrefectureStateResponse(
+                this.state().toString(),
+                this.currentMonth);
     }
 
 }
