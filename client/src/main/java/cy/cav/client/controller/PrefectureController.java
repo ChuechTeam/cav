@@ -63,7 +63,7 @@ public class PrefectureController {
 
         } catch (Exception e) {
             // querySync return ActorNotFoundException
-            return ResponseEntity.internalServerError().build();
+            return ResponseEntity.notFound().build();
         }
     }
 
@@ -82,7 +82,22 @@ public class PrefectureController {
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             e.printStackTrace();
-            return ResponseEntity.internalServerError().build();
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    @PostMapping("/{id}/next-month")
+    public ResponseEntity<NextMonthResponse> nextMonth(@PathVariable Long id) {
+        try {
+            ActorAddress target = resolvePrefectureAddress(id);
+
+            // On envoie le signal sans attendre de données du client (pas de Body nécessaire)
+            NextMonthResponse response = world.querySync( target, new NextMonthRequest());
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.notFound().build();
         }
     }
 }
