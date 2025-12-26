@@ -17,6 +17,16 @@ Si vous voulez lancer le service mais qu'il ne contienne :
 - que des acteurs préfectures : `--prefecture-only` ou `-p`
 - que des acteurs calculateurs : `--calculators-only` ou `-c`
 
+Si vous voulez activer les exemples, créez un fichier `application.local.yml` puis ajoutez les paramètres suivants :
+```yaml
+cav:
+  example1: true
+  example2: true
+  example3: true
+```
+
+Bien sûr, vous pouvez mettre certains à false pour ne pas les lancer.
+
 ### Lancer le client (API REST)
 
 Windows : `python ./run.py client`
