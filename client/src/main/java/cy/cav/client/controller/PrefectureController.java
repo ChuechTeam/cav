@@ -1,29 +1,16 @@
 package cy.cav.client.controller;
 
-import java.util.List;
-import java.util.stream.Collectors;
+import cy.cav.client.dto.*;
+import cy.cav.framework.*;
+import cy.cav.protocol.*;
+import cy.cav.protocol.accounts.*;
+import cy.cav.protocol.requests.*;
+import org.springframework.beans.factory.annotation.*;
+import org.springframework.http.*;
+import org.springframework.web.bind.annotation.*;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
-import cy.cav.framework.ActorAddress;
-import cy.cav.framework.Network;
-import cy.cav.framework.World;
-import cy.cav.protocol.KnownActors;
-import cy.cav.protocol.PrefectureInfo;
-import cy.cav.protocol.accounts.CreateAccountRequest;
-import cy.cav.protocol.accounts.CreateAccountResponse;
-import cy.cav.protocol.requests.NextMonthRequest;
-import cy.cav.protocol.requests.NextMonthResponse;
-import cy.cav.protocol.requests.PrefectureStateRequest;
-import cy.cav.protocol.requests.PrefectureStateResponse;
+import java.util.*;
+import java.util.stream.*;
 
 @RestController
 @RequestMapping("/api/prefectures")
@@ -48,7 +35,7 @@ public class PrefectureController {
         } catch (NumberFormatException e) {
             throw new RuntimeException("Format d'ID serveur invalide : " + serverIdHex);
         }
-        
+
         if (!network.servers().containsKey(targetServerId)) {
             throw new RuntimeException("Serveur introuvable !");
         }
@@ -66,7 +53,7 @@ public class PrefectureController {
         return network.servers().values().stream()
                 .filter(server -> "true".equalsIgnoreCase(server.metadata().get("supportsPrefecture")))
                 .map(server -> new PrefectureInfo(
-                        server.id(),
+                        HexFormat.of().toHexDigits(server.id()),
                         "Préfecture " + server.appName() + " (" + server.idString() + ")"
                 ))
                 .collect(Collectors.toList());
@@ -93,17 +80,28 @@ public class PrefectureController {
     @PostMapping("/{id}/accounts")
     public ResponseEntity<CreateAccountResponse> createAccount(
             @PathVariable String id,
-            @RequestBody CreateAccountRequest request) {
+            @RequestBody AllocataireDTO request) {
 
         try {
             ActorAddress target = resolvePrefectureAddress(id);
 
             // Use of querySync
-            CreateAccountResponse response = world.querySync(target, request);
+            CreateAccountResponse response = world.querySync(target, new CreateAccountRequest(
+                    request.firstName(),
+                    request.lastName(),
+                    request.birthDate(),
+                    request.email(),
+                    request.phoneNumber(),
+                    request.address(),
+                    request.hasHousing(),
+                    request.inCouple(),
+                    request.numberOfDependents(),
+                    request.monthlyIncome(),
+                    request.iban()
+            ));
 
             return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (ActorNotFoundException e) {
             return ResponseEntity.notFound().build();
         }
     }
@@ -114,11 +112,10 @@ public class PrefectureController {
             ActorAddress target = resolvePrefectureAddress(id);
 
             // On envoie le signal sans attendre de données du client (pas de Body nécessaire)
-            NextMonthResponse response = world.querySync( target, new NextMonthRequest());
+            NextMonthResponse response = world.querySync(target, new NextMonthRequest());
 
             return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (ActorNotFoundException e) {
             return ResponseEntity.notFound().build();
         }
     }

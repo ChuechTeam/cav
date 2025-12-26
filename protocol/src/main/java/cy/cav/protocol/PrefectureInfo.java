@@ -1,6 +1,6 @@
 package cy.cav.protocol;
 
 public record PrefectureInfo(
-        Long id,
+        String id,
         String name){
 }
