@@ -14,7 +14,6 @@ function LoginForm({ onLogin, onShowCreateAccount }) {
       return;
     }
 
-    // Valider le format de l'adresse (serverId:actorNumber)
     if (!/^[0-9a-f]+:[0-9a-f]+$/.test(address.trim())) {
       setError(
         "Format d'adresse invalide. Utilisez le format serverId:actorNumber (ex: 1:100)"
@@ -25,7 +24,6 @@ function LoginForm({ onLogin, onShowCreateAccount }) {
     setLoading(true);
 
     try {
-      // Vérifier que le compte existe en appelant l'API (avec timeout)
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s timeout
 

@@ -1,18 +1,36 @@
 package cy.cav.service.actors;
 
-import cy.cav.framework.*;
-import cy.cav.framework.reliable.*;
-import cy.cav.protocol.*;
-import cy.cav.protocol.accounts.*;
-import cy.cav.protocol.allowances.*;
-import cy.cav.protocol.requests.*;
-import cy.cav.service.*;
-import cy.cav.service.domain.*;
-import cy.cav.service.domain.AllowancePrevision;
-import org.slf4j.*;
+import java.time.Duration;
+import java.time.LocalDate;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
-import java.time.*;
-import java.util.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import cy.cav.framework.Actor;
+import cy.cav.framework.ActorInit;
+import cy.cav.framework.Envelope;
+import cy.cav.framework.Router;
+import cy.cav.framework.reliable.AckRetryer;
+import cy.cav.framework.reliable.AckStore;
+import cy.cav.protocol.AllowancePrevisionState;
+import cy.cav.protocol.AllowanceType;
+import cy.cav.protocol.BeneficiaryProfile;
+import cy.cav.protocol.Payment;
+import cy.cav.protocol.accounts.GetAccountRequest;
+import cy.cav.protocol.accounts.GetAccountResponse;
+import cy.cav.protocol.allowances.CalculateAllowance;
+import cy.cav.protocol.allowances.PayAllowances;
+import cy.cav.protocol.allowances.ReceivePayments;
+import cy.cav.protocol.requests.RequestAllowanceRequest;
+import cy.cav.protocol.requests.RequestAllowanceResponse;
+import cy.cav.service.ServerFinder;
+import cy.cav.service.domain.AllowancePrevision;
+import cy.cav.service.domain.Beneficiary;
 
 /**
  * Actor representing a single beneficiary (allocataire).
@@ -89,7 +107,8 @@ public class BeneficiaryActor extends Actor {
                 beneficiary.getId(),
                 beneficiary.toProfile(),
                 List.copyOf(beneficiary.getPayments()),
-                protocolPrevisions
+                protocolPrevisions,
+                currentMonth
         );
     }
 

@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 
-// Convertit l'adresse en string pour l'API
+
 function addressToString(addr) {
   if (typeof addr === "string") return addr;
   if (addr && addr.serverId !== undefined && addr.actorNumber !== undefined) {
@@ -9,14 +9,12 @@ function addressToString(addr) {
   return String(addr);
 }
 
-// Labels pour les états de prévision
 const STATE_LABELS = {
   UNWANTED: { text: "Non demandé", color: "text-zinc-400" },
   PENDING: { text: "En attente", color: "text-yellow-400" },
   UP_TO_DATE: { text: "À jour", color: "text-green-400" },
 };
 
-// Labels pour les types d'allocation
 const ALLOWANCE_LABELS = {
   RSA: "RSA (Revenu de Solidarité Active)",
 };
@@ -27,10 +25,11 @@ function AccountView({ actorAddress, onLogout }) {
   const [error, setError] = useState(null);
   const [actionLoading, setActionLoading] = useState(null);
   const [actionMessage, setActionMessage] = useState(null);
+  const [nextMonthLoading, setNextMonthLoading] = useState(false);
 
   const addrString = addressToString(actorAddress);
 
-  const fetchAccount = async () => {
+  const fetchAccount = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -49,11 +48,11 @@ function AccountView({ actorAddress, onLogout }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [addrString]);
 
   useEffect(() => {
     fetchAccount();
-  }, [addrString]);
+  }, [fetchAccount]);
 
   const handleRequestAllowance = async (type) => {
     setActionLoading(type);
@@ -70,7 +69,6 @@ function AccountView({ actorAddress, onLogout }) {
           type: "success",
           text: data.message || "Demande envoyée avec succès",
         });
-        // Recharger les données du compte
         setTimeout(() => fetchAccount(), 1000);
       } else {
         const data = await response.json();
@@ -90,12 +88,58 @@ function AccountView({ actorAddress, onLogout }) {
     }
   };
 
-  const handleRefuseAllowance = async (type) => {
-    // Implémenter dans le back pour refuser une aide (en attete)
+  const handleRefuseAllowance = async () => {
     setActionMessage({
       type: "info",
       text: "Fonctionnalite refuser une aide à implémenter du cote back",
     });
+  };
+
+  const handleNextMonth = async () => {
+    setNextMonthLoading(true);
+    setActionMessage(null);
+    try {
+
+      let serverId;
+      if (typeof actorAddress === "string") {
+        serverId = actorAddress.split(":")[0];
+      } else {
+        serverId = actorAddress.serverId;
+      }
+
+      const response = await fetch(
+        `http://localhost:4444/api/prefectures/${serverId}/next-month`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        setActionMessage({
+          type: "success",
+          text: `Passage au mois suivant effectué : ${data.month}`,
+        });
+        setTimeout(() => {
+          fetchAccount();
+          setActionMessage(null);
+        }, 1000);
+      } else {
+        setActionMessage({
+          type: "error",
+          text: "Erreur lors du passage au mois suivant.",
+        });
+      }
+    } catch (err) {
+      console.error("Erreur handleNextMonth:", err);
+      setActionMessage({
+        type: "error",
+        text: "Erreur de connexion au serveur.",
+      });
+    } finally {
+      setNextMonthLoading(false);
+    }
   };
 
   if (loading) {
@@ -133,59 +177,88 @@ function AccountView({ actorAddress, onLogout }) {
     );
   }
 
-  const { profile, payments, allowancePrevisions } = account;
+  const { profile, payments, allowancePrevisions, currentMonth } = account;
+
+  const formatMonth = (dateString) => {
+    if (!dateString) return "";
+    const date = new Date(dateString);
+    return date.toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
+  };
 
   return (
     <div className="space-y-6">
       {/* En-tête avec infos utilisateur */}
       <div className="p-6 border rounded-lg bg-zinc-800 border-zinc-700">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex flex-col gap-4 mb-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="text-2xl font-bold text-white">
               {profile.firstName} {profile.lastName}
             </h2>
             <p className="font-mono text-sm text-zinc-500">{addrString}</p>
           </div>
-          <button
-            onClick={onLogout}
-            className="px-4 py-2 text-white transition-colors bg-red-800 rounded hover:bg-red-900"
-          >
-            Se déconnecter
-          </button>
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={handleNextMonth}
+              disabled={nextMonthLoading}
+              className="px-4 py-2 text-sm text-white transition-colors rounded sm:text-base bg-cyan-800 hover:bg-cyan-900 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {nextMonthLoading ? "Chargement..." : "Passer au mois suivant"}
+            </button>
+            <button
+              onClick={onLogout}
+              className="px-4 py-2 text-sm text-white transition-colors bg-red-800 rounded sm:text-base hover:bg-red-900"
+            >
+              Se déconnecter
+            </button>
+          </div>
         </div>
 
         {/* Infos profil */}
-        <div className="grid grid-cols-2 gap-4 text-sm md:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 text-sm sm:grid-cols-2 lg:grid-cols-3">
           <div>
-            <span className="text-zinc-500">Email</span>
+            <span className="block mb-1 text-xs font-medium uppercase text-zinc-500">
+              Email
+            </span>
             <p className="text-white">{profile.email || "-"}</p>
           </div>
           <div>
-            <span className="text-zinc-500">Téléphone</span>
+            <span className="block mb-1 text-xs font-medium uppercase text-zinc-500">
+              Téléphone
+            </span>
             <p className="text-white">{profile.phoneNumber || "-"}</p>
           </div>
           <div>
-            <span className="text-zinc-500">Adresse</span>
+            <span className="block mb-1 text-xs font-medium uppercase text-zinc-500">
+              Adresse
+            </span>
             <p className="text-white">{profile.address || "-"}</p>
           </div>
           <div>
-            <span className="text-zinc-500">Situation</span>
+            <span className="block mb-1 text-xs font-medium uppercase text-zinc-500">
+              Logement
+            </span>
             <p className="text-white">
-              {profile.hasHousing ? "A un logement" : "Est sans domicile fixe"}
+              {profile.hasHousing ? "A un logement" : "Sans domicile fixe"}
             </p>
           </div>
           <div>
-            <span className="text-zinc-500">Situation</span>
+            <span className="block mb-1 text-xs font-medium uppercase text-zinc-500">
+              Situation familiale
+            </span>
             <p className="text-white">
               {profile.inCouple ? "En couple" : "Célibataire"}
             </p>
           </div>
           <div>
-            <span className="text-zinc-500">Personnes à charge</span>
+            <span className="block mb-1 text-xs font-medium uppercase text-zinc-500">
+              Personnes à charge
+            </span>
             <p className="text-white">{profile.numberOfDependents}</p>
           </div>
           <div>
-            <span className="text-zinc-500">Revenus mensuels</span>
+            <span className="block mb-1 text-xs font-medium uppercase text-zinc-500">
+              Revenus mensuels
+            </span>
             <p className="text-white">{profile.monthlyIncome} €</p>
           </div>
         </div>
@@ -194,12 +267,21 @@ function AccountView({ actorAddress, onLogout }) {
       {/* Prévisions d'allocations */}
       <div className="p-6 border rounded-lg bg-zinc-800 border-zinc-700">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-white">Mes allocations</h3>
+          <div>
+            <h3 className="text-lg font-semibold text-white">
+              Mes allocations
+            </h3>
+            {currentMonth && (
+              <p className="text-sm text-zinc-400">
+                Mois en cours : {formatMonth(currentMonth)}
+              </p>
+            )}
+          </div>
           <button
             onClick={fetchAccount}
             className="px-3 py-1 text-sm transition-colors rounded text-zinc-400 hover:text-white hover:bg-zinc-700"
           >
-            ↻ Actualiser
+            Actualiser
           </button>
         </div>
 

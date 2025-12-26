@@ -79,7 +79,7 @@ public class AccountController {
             GetAccountResponse response = world.querySync(addr, new GetAccountRequest());
 
             return ResponseEntity.ok(
-                    new AccountRepr(response.profile(), response.payments(), response.allowancePrevisions())
+                    new AccountRepr(response.profile(), response.payments(), response.allowancePrevisions(), response.currentMonth())
             );
         } catch (ActorNotFoundException e) {
             return ResponseEntity.notFound().build();
@@ -89,7 +89,8 @@ public class AccountController {
     // todo: see if we should separate profile from api
     public record AccountRepr(BeneficiaryProfile profile,
                               List<Payment> payments,
-                              Map<AllowanceType, AllowancePrevision> allowancePrevisions) { }
+                              Map<AllowanceType, AllowancePrevision> allowancePrevisions,
+                              java.time.LocalDate currentMonth) { }
 
     public record CreatedAccountResponse(ActorAddress beneficiaryAddress) { }
 }

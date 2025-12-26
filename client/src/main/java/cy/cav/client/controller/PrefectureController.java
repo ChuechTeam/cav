@@ -1,15 +1,29 @@
 package cy.cav.client.controller;
 
-import cy.cav.framework.*;
-import cy.cav.protocol.*;
-import cy.cav.protocol.accounts.*;
-import cy.cav.protocol.requests.*;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
 import java.util.stream.Collectors;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import cy.cav.framework.ActorAddress;
+import cy.cav.framework.Network;
+import cy.cav.framework.World;
+import cy.cav.protocol.KnownActors;
+import cy.cav.protocol.PrefectureInfo;
+import cy.cav.protocol.accounts.CreateAccountRequest;
+import cy.cav.protocol.accounts.CreateAccountResponse;
+import cy.cav.protocol.requests.NextMonthRequest;
+import cy.cav.protocol.requests.NextMonthResponse;
+import cy.cav.protocol.requests.PrefectureStateRequest;
+import cy.cav.protocol.requests.PrefectureStateResponse;
 
 @RestController
 @RequestMapping("/api/prefectures")
@@ -26,7 +40,15 @@ public class PrefectureController {
     }
 
     // Research the address of our prefecture
-    private ActorAddress resolvePrefectureAddress(Long targetServerId) {
+    private ActorAddress resolvePrefectureAddress(String serverIdHex) {
+        // Convert hex string to Long
+        Long targetServerId;
+        try {
+            targetServerId = Long.parseUnsignedLong(serverIdHex, 16);
+        } catch (NumberFormatException e) {
+            throw new RuntimeException("Format d'ID serveur invalide : " + serverIdHex);
+        }
+        
         if (!network.servers().containsKey(targetServerId)) {
             throw new RuntimeException("Serveur introuvable !");
         }
@@ -52,7 +74,7 @@ public class PrefectureController {
 
     // Getting the state (name + current month of a prefecture)
     @GetMapping("/{id}/state")
-    public ResponseEntity<PrefectureStateResponse> getPrefectureState(@PathVariable Long id) {
+    public ResponseEntity<PrefectureStateResponse> getPrefectureState(@PathVariable String id) {
         try {
             ActorAddress target = resolvePrefectureAddress(id);
 
@@ -70,7 +92,7 @@ public class PrefectureController {
     // 3. Créer un compte - Version simplifiée avec querySync
     @PostMapping("/{id}/accounts")
     public ResponseEntity<CreateAccountResponse> createAccount(
-            @PathVariable Long id,
+            @PathVariable String id,
             @RequestBody CreateAccountRequest request) {
 
         try {
@@ -87,7 +109,7 @@ public class PrefectureController {
     }
 
     @PostMapping("/{id}/next-month")
-    public ResponseEntity<NextMonthResponse> nextMonth(@PathVariable Long id) {
+    public ResponseEntity<NextMonthResponse> nextMonth(@PathVariable String id) {
         try {
             ActorAddress target = resolvePrefectureAddress(id);
 
