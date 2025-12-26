@@ -1,10 +1,13 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 function CreateAccountForm({ onAccountCreated, onCancel }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [prefectures, setPrefectures] = useState([]);
+  const [loadingPrefectures, setLoadingPrefectures] = useState(true);
 
   const [formData, setFormData] = useState({
+    prefectureId: "",
     firstName: "",
     lastName: "",
     birthDate: "",
@@ -26,6 +29,34 @@ function CreateAccountForm({ onAccountCreated, onCancel }) {
     }));
   };
 
+  // Charger la liste des préfectures au montage du composant
+  useEffect(() => {
+    const fetchPrefectures = async () => {
+      try {
+        const response = await fetch("http://localhost:4444/api/prefectures");
+        if (response.ok) {
+          const data = await response.json();
+          setPrefectures(data);
+          if (data.length > 0) {
+            setFormData((prev) => ({
+              ...prev,
+              prefectureId: data[0].id.toString(16),
+            }));
+          }
+        } else {
+          setError("Impossible de charger la liste des préfectures.");
+        }
+      } catch (err) {
+        setError("Erreur lors du chargement des préfectures.");
+        console.error("Erreur:", err);
+      } finally {
+        setLoadingPrefectures(false);
+      }
+    };
+
+    fetchPrefectures();
+  }, []);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
@@ -34,20 +65,36 @@ function CreateAccountForm({ onAccountCreated, onCancel }) {
       return;
     }
 
+    if (!formData.prefectureId) {
+      setError("Veuillez sélectionner une préfecture.");
+      return;
+    }
+
     setLoading(true);
 
     try {
-      const response = await fetch("http://localhost:4444/api/accounts", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          ...formData,
-          numberOfDependents: parseInt(formData.numberOfDependents) || 0,
-          monthlyIncome: parseFloat(formData.monthlyIncome) || 0,
-        }),
-      });
+      const response = await fetch(
+        `http://localhost:4444/api/prefectures/${formData.prefectureId}/accounts`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            firstName: formData.firstName,
+            lastName: formData.lastName,
+            birthDate: formData.birthDate,
+            email: formData.email,
+            phoneNumber: formData.phoneNumber,
+            address: formData.address,
+            hasHousing: formData.hasHousing,
+            inCouple: formData.inCouple,
+            numberOfDependents: parseInt(formData.numberOfDependents) || 0,
+            monthlyIncome: parseFloat(formData.monthlyIncome) || 0,
+            iban: formData.iban,
+          }),
+        }
+      );
 
       if (response.ok) {
         const data = await response.json();
@@ -78,6 +125,32 @@ function CreateAccountForm({ onAccountCreated, onCancel }) {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Sélection de la préfecture */}
+        <div>
+          <label className="block mb-1 text-sm font-medium text-zinc-300">
+            Préfecture *
+          </label>
+          {loadingPrefectures ? (
+            <div className="text-zinc-400">Chargement des préfectures...</div>
+          ) : (
+            <select
+              name="prefectureId"
+              value={formData.prefectureId}
+              onChange={handleChange}
+              className="w-full px-3 py-2 text-white border rounded bg-zinc-700 border-zinc-600 focus:outline-none focus:border-blue-500"
+              disabled={loading}
+              required
+            >
+              <option value="">-- Sélectionnez une préfecture --</option>
+              {prefectures.map((prefecture) => (
+                <option key={prefecture.id} value={prefecture.id.toString(16)}>
+                  {prefecture.name}
+                </option>
+              ))}
+            </select>
+          )}
+        </div>
+
         {/* Identité */}
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
