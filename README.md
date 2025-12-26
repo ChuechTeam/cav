@@ -201,3 +201,115 @@ Sans corps.
   }
 }
 ```
+---
+
+### Lister les préfectures disponibles
+
+Permet de découvrir les serveurs du réseau qui agissent en tant que Préfectures (filtrés via métadonnées).
+
+`GET /api/prefectures`
+
+**Entrée**
+
+Sans corps.
+
+**Sortie 200 OK**
+
+```json
+[
+  {
+    "id": 4510756809869306294,
+    "name": "Préfecture cav-service (3e996d6b686f29b6)"
+  },
+  {
+    "id": -2003999959543938588,
+    "name": "Préfecture cav-service (e430...)"
+  }
+]
+```
+---
+
+### Récupérer l'état d'une préfecture
+Permet de vérifier le statut d'une préfecture spécifique et de connaître son mois courant (temps virtuel).
+
+`GET /api/prefectures/{id}/state`
+
+Où `{id}` est l'identifiant du serveur préfecture (récupéré via le listing).
+
+**Entrée**
+
+Sans corps.
+
+**Sortie 200 OK**
+
+```json
+{
+  "status": "ALIVE",
+  "currentMonth": "2025-12-01"
+}
+```
+---
+
+### Passer au mois suivant
+
+Déclenche le passage au mois suivant pour une préfecture donnée (et déclenche le paiement des allocations).
+
+`POST /api/prefectures/{id}/next-month`
+
+Où `{id}` est l'identifiant du serveur préfecture.
+
+**Entrée**
+
+Sans corps.
+
+**Sortie 200 OK**
+
+Retourne la nouvelle date après passage du mois.
+
+```json
+{
+  "currentMonth": "2026-01-01"
+}
+```
+
+---
+
+### Créer un compte dans une préfecture spécifique
+
+Permet de créer un allocataire sur un serveur précis.
+
+`POST /api/prefectures/{id}/accounts`
+
+Où `{id}` est l'identifiant du serveur préfecture cible.
+
+**Entrée**
+
+**Important :** Le champ `"type"` est obligatoire pour permettre le polymorphisme du message.
+
+```json
+{
+  "type": "cy.cav.protocol.accounts.CreateAccountRequest",
+  "firstName": "Thomas",
+  "lastName": "Anderson",
+  "birthDate": "1999-03-31",
+  "email": "neo@matrix.com",
+  "phoneNumber": "0600000000",
+  "address": "101 Room",
+  "inCouple": false,
+  "numberOfDependents": 0,
+  "monthlyIncome": 2000,
+  "iban": "FR76 1234 5678 9012"
+}
+```
+
+**Sortie 200 OK**
+
+L'adresse retournée (`beneficiaryAddress`) contient l'ID hexadécimal du serveur ciblé en préfixe, confirmant la localisation de l'acteur.
+
+```json
+{
+  "type": "cy.cav.protocol.accounts.CreateAccountResponse",
+  "beneficiaryId": "122ee289-a795-4695-814a-3ac251dd4237",
+  "beneficiaryAddress": "3e996d6b686f29b6:00000000000103fd"
+}
+```
