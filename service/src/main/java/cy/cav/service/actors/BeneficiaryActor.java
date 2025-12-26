@@ -120,18 +120,22 @@ public class BeneficiaryActor extends Actor {
         log.info("Processing allowance request for beneficiary: {}; {}",
                 beneficiary.getId(), request);
 
+        startPrevisionCalculation(request.type());
+
+        return new RequestAllowanceResponse(true, "La demande a bien été envoyée !");
+    }
+
+    private void startPrevisionCalculation(AllowanceType type) {
         // Create the message and send it to the calculator
         CalculateAllowance message = new CalculateAllowance(beneficiary.toProfile());
-        retryer.send(_ -> serverFinder.pickCalculatorActor(request.type()), message);
+        retryer.send(_ -> serverFinder.pickCalculatorActor(type), message);
 
         // Update the prevision --> PENDING
-        AllowancePrevision prevision = allowancePrevisions.get(request.type());
+        AllowancePrevision prevision = allowancePrevisions.get(type);
         if (prevision.getAckId() != null) {
             retryer.giveUp(prevision.getAckId());
         }
         prevision.start(message.ackId());
-
-        return new RequestAllowanceResponse(true, "La demande a bien été envoyée !");
     }
 
     private void allowanceCalculated(CalculateAllowance.Ack ack) {
@@ -168,6 +172,15 @@ public class BeneficiaryActor extends Actor {
         LocalDate prevMonth = currentMonth;
         currentMonth = message.month().plusMonths(1);
         log.info("Beneficiary {} has now moved from month {} to {}", address, prevMonth, currentMonth);
+
+        // Refresh previsions
+        for (AllowancePrevision prevision : allowancePrevisions.values()) {
+            if (prevision.getState() != AllowancePrevisionState.UNWANTED) {
+                continue;
+            }
+
+            startPrevisionCalculation(prevision.getType());
+        }
 
         // All good!
         send(envelope.sender(), new PayAllowances.Ack(message.ackId()));

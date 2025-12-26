@@ -64,12 +64,8 @@ public class Prefecture extends Actor {
             ActorAddress actorAddress = world.spawn(init -> new BeneficiaryActor(init, currentMonth, beneficiary, serverFinder));
             beneficiaryActors.put(beneficiary.getId(), actorAddress);
 
-            send(actorAddress, new RequestAllowanceRequest(AllowanceType.RSA));
-
             log.info("Spawned default beneficiary actor: {}", actorAddress);
         }
-
-        send(address, new NextMonthRequest());
     }
 
     @Override
