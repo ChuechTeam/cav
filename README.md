@@ -6,25 +6,6 @@
 - Python 3
 - Node.js pour le frontend
 
-## Ce qu'il reste à faire
-
-- **Côté service :**
-  - Créer de nouvelles aides (pas forcément réaliste, on met ce qu'on veut, plus c'est bidon mieux c'est)
-  - Modifier son profil en tant qu'allocataire
-    - Attention à bien recalculer toutes les previsions d'allocations !!
-- **Côté API client :**
-  - Possibilité de choisir quelle préfecture utiliser pour créer un compte
-  - Récupérer l'état d'une préfecture (mois actuel)
-  - Passer au mois suivant pour une préfecture
-  - Modifier le profil d'un allocataire (faire service avant)
-- **Côté frontend :**
-  - Faire l'unique page du site où on peut :
-    - Créer un compte ou se connecter (pas besoin de mdp, juste l'adresse de l'acteur)
-    - Voir les prévisions d'allocations
-    - Demander/Refuser une aide
-    - Voir l'historique de paiement
-    - Passer au mois suivant
-
 ## Pour lancer le projet
 
 ### Lancer les services
