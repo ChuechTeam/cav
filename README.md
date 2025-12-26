@@ -275,11 +275,8 @@ Où `{id}` est l'identifiant du serveur préfecture cible.
 
 **Entrée**
 
-**Important :** Le champ `"type"` est obligatoire pour permettre le polymorphisme du message.
-
 ```json
 {
-  "type": "cy.cav.protocol.accounts.CreateAccountRequest",
   "firstName": "Thomas",
   "lastName": "Anderson",
   "birthDate": "1999-03-31",
